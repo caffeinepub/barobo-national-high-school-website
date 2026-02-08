@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useActor } from '../hooks/useActor';
 import PhilippineTimeClock from '../components/PhilippineTimeClock';
+import WeatherForecastSection from '../components/WeatherForecastSection';
 import SchoolActivitiesSlider from '../components/SchoolActivitiesSlider';
 import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2 } from 'lucide-react';
 import { useGetBNHSHymnVideo } from '../hooks/useQueries';
@@ -146,6 +147,11 @@ export default function HomePage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Weather Forecast Section - directly below Philippine Standard Time */}
+        <div className="mb-8">
+          <WeatherForecastSection />
         </div>
 
         <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Activities</h2>

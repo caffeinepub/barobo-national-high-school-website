@@ -1,0 +1,49 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Home page Barobo, Caraga weather forecast section (React Query)",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Add a Barobo, Caraga weather forecast block directly below the Philippine Standard Time display on the Home page.",
+      "acceptanceCriteria": [
+        "On the Home page, a weather forecast block is visible immediately under the Philippine Standard Time line on both mobile and desktop layouts.",
+        "The location label is shown in English as “Barobo, Caraga”."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/WeatherForecastSection.tsx",
+          "operation": "create",
+          "description": "Create a reusable WeatherForecastSection component that renders the location label “Barobo, Caraga” and displays current conditions plus a multi-day forecast with responsive Tailwind layout. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Wire WeatherForecastSection into the Home page directly below the <PhilippineTimeClock /> area, ensuring it sits immediately under the Philippine Standard Time line on both mobile and desktop layouts."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Fetch and render Barobo, Caraga weather data client-side with React Query, including loading/error states and at least a 3-day forecast.",
+      "acceptanceCriteria": [
+        "Weather data is fetched asynchronously via React Query and does not block initial page render.",
+        "While fetching, the weather section shows a clear loading state.",
+        "If the fetch fails, the weather section shows a clear error state and does not break the rest of the Home page.",
+        "The weather section displays current conditions (e.g., temperature + condition) and at least a 3-day forecast (date/day + high/low and condition)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useBaroboWeather.ts",
+          "operation": "create",
+          "description": "Implement a dedicated React Query hook that client-side fetches Barobo, Caraga weather data (e.g., via a public forecast API such as Open-Meteo using Barobo coordinates), parses it into a UI-friendly shape (current conditions + at least 3 days), and exposes query state for loading/error handling."
+        },
+        {
+          "path": "frontend/src/components/WeatherForecastSection.tsx",
+          "operation": "modify",
+          "description": "Connect WeatherForecastSection to useBaroboWeather and render: (1) a non-blocking loading UI while the query is in-flight, (2) a resilient error UI on failure, and (3) current conditions plus at least a 3-day forecast summary on success. Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [
+    "Role/permission state may load before backend role initialization completes; ensure role is resolved deterministically on login (avoid transient 'Unknown'/'User')."
+  ],
+  "known_issues": [
+    "Login role is inconsistent (sometimes 'Unknown' or 'User') and can lead to 'You don't have any permissions assigned yet' despite being intended as Super Admin."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-add-a-weather-forecast-section-for-barobo-caraga-on-the-home-page-frontend-src-pages-homepage-tsx-positioned-directly-below-the-philippine-standard-time-display-the-philippinetimeclock-area",
+      "title": "Add a weather forecast section for “Barobo, Caraga” on the Home page (frontend/src/pages/HomePage.tsx) positioned directly below the Philippine Standard Time display (the <PhilippineTimeClock /> area).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-client-side-fetching-of-the-barobo-caraga-forecast-using-react-query-including-loading-and-error-states-and-display-a-concise-forecast-summary-at-minimum-current-conditions-and-a-multi-day-forecast",
+      "title": "Implement client-side fetching of the Barobo, Caraga forecast using React Query, including loading and error states, and display a concise forecast summary (at minimum: current conditions and a multi-day forecast).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Display a weather forecast for Barobo, Caraga on the home page below the Philippine Standard Time section",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Permanently assign/lock the correct Internet Identity as Super Admin so role and permissions are consistent immediately on login",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Add Barobo, Caraga weather forecast below Philippine Standard Time on Home page",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

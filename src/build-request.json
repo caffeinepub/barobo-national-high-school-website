@@ -1,0 +1,55 @@
+{
+  "kind": "build_request",
+  "title": "Add Barobo, Caraga weather forecast below Philippine Standard Time on Home page",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Add a weather forecast section for “Barobo, Caraga” on the Home page (frontend/src/pages/HomePage.tsx) positioned directly below the Philippine Standard Time display (the <PhilippineTimeClock /> area).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "In the home page below the Philippine Standard Time can you place the weather forecast in-Barobo, Caraga"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On the Home page, a weather forecast block is visible immediately under the Philippine Standard Time line on both mobile and desktop layouts.",
+        "The location label is shown in English as “Barobo, Caraga”."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement client-side fetching of the Barobo, Caraga forecast using React Query, including loading and error states, and display a concise forecast summary (at minimum: current conditions and a multi-day forecast).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "...place the weather forecast in-Barobo, Caraga"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Weather data is fetched asynchronously via React Query and does not block initial page render.",
+        "While fetching, the weather section shows a clear loading state.",
+        "If the fetch fails, the weather section shows a clear error state and does not break the rest of the Home page.",
+        "The weather section displays current conditions (e.g., temperature + condition) and at least a 3-day forecast (date/day + high/low and condition)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/components/ui (read-only).",
+    "Do not modify immutable hook files (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx)."
+  ],
+  "nonGoals": [
+    "Do not add user-selectable locations or a full weather settings page.",
+    "Do not implement real-time weather updates via websockets or push notifications."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

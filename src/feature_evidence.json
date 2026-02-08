@@ -1,0 +1,49 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-add-a-weather-forecast-section-for-barobo-caraga-on-the-home-page-frontend-src-pages-homepage-tsx-positioned-directly-below-the-philippine-standard-time-display-the-philippinetimeclock-area",
+      "featureTitle": "Add a weather forecast section for “Barobo, Caraga” on the Home page (frontend/src/pages/HomePage.tsx) positioned directly below the Philippine Standard Time display (the <PhilippineTimeClock /> area).",
+      "files": [
+        "frontend/src/components/WeatherForecastSection.tsx",
+        "frontend/src/pages/HomePage.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-client-side-fetching-of-the-barobo-caraga-forecast-using-react-query-including-loading-and-error-states-and-display-a-concise-forecast-summary-at-minimum-current-conditions-and-a-multi-day-forecast",
+      "featureTitle": "Implement client-side fetching of the Barobo, Caraga forecast using React Query, including loading and error states, and display a concise forecast summary (at minimum: current conditions and a multi-day forecast).",
+      "files": [
+        "frontend/src/components/WeatherForecastSection.tsx",
+        "frontend/src/hooks/useBaroboWeather.ts"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
+}
