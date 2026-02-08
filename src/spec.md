@@ -1,11 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure the Home page Facebook presence block reliably renders the embedded Facebook Page timeline/posts on desktop/tablet while keeping current mobile behavior and the existing two-column, height-matching layout.
+**Goal:** Replace the Home page principal photo with the user’s newly uploaded principal image.
 
 **Planned changes:**
-- Update the Home page Facebook embed implementation to render reliably on desktop/tablet viewports (>= 768px) while continuing to work on mobile (< 768px).
-- Make embed load vs. failure detection deterministic so the fallback link only appears when the embed genuinely fails (e.g., blocked network/privacy/embed error), without false triggers on desktop.
-- Preserve the current md+ two-column layout and keep the Facebook block height constrained to match the rendered height of the Weather Forecast section; keep small-screen stacking without artificial height constraints.
+- Process the newly uploaded principal image into a clean, sharp 1:1 square crop (600×600), centered on the face with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows.
+- Save/update the processed asset at `frontend/public/assets/generated/principal-photo.dim_600x600.png` and keep the Home page referencing `/assets/generated/principal-photo.dim_600x600.png` without other layout/style changes.
 
-**User-visible outcome:** On desktop/tablet, visitors can see the school’s embedded Facebook Page timeline/posts (instead of an empty area), with the fallback link only appearing when the embed truly cannot load, and the Home page layout/section heights remain as intended.
+**User-visible outcome:** The Home page shows the updated principal portrait in the Welcome/Principal section with the same sizing and layout as before.

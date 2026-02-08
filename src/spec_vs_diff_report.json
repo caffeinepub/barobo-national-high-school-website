@@ -1,54 +1,29 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T03:17:12.066Z",
-  "summary": "Implemented a new deterministic Facebook Page Plugin iframe embed with load/timeout-based failure handling and added weather-height measurement to constrain the Facebook block on md+ viewports. However, the embedded Facebook page URL does not exactly match the required URL (missing trailing period), and the diff indicates multiple unrelated app-wide/header/footer/router changes that were not requested.",
+  "generatedAt": "2026-02-08T07:19:21.160Z",
+  "summary": "The diff only modifies project_state.json metadata and does not show the required principal photo asset replacement or any Home page reference updates. It also describes additional admin-panel editability that is explicitly a non-goal.",
   "missing_requirements": [
     {
-      "id": "REQ-6",
-      "requirement": "Keep the Facebook presence block targeting the exact page URL: https://www.facebook.com/BaroboNationalHighSchool.",
-      "reason": "The Facebook page URL constant in the updated FacebookPresenceBlock omits the required trailing period, so it is not an exact match.",
+      "id": "REQ-13",
+      "requirement": "Replace the existing principal photo used on the Home page with the newly uploaded principal image, processed as a clean 600×600 square PNG, saved at frontend/public/assets/generated/principal-photo.dim_600x600.png, and continue displaying via /assets/generated/principal-photo.dim_600x600.png with no layout regressions.",
+      "reason": "No diff evidence shows the principal image asset being updated/added at the required path, nor any Home page usage/reference being confirmed. The only modified file is project_state.json.",
       "evidence": [
-        "frontend/src/components/FacebookPresenceBlock.tsx"
+        "project_state.json"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Updated app routing/imports (e.g., TanStack Router setup changes and removing a non-existent InkspirerPage import).",
-      "reason": "Not requested by REQ-6/7/8; BuildRequest explicitly warns against changing other sections/global behavior beyond fixing the Facebook embed rendering.",
+      "description": "Admin panel functionality to make the Principal section content (photo/name/position/message) and Faculty/Staff group photo editable.",
+      "reason": "The BuildRequest explicitly lists creating new admin-panel functionality for uploading/changing the principal image as a non-goal; however the diff summary text claims such editability is included.",
       "evidence": [
-        "frontend-file-summaries.txt (mentions \"frontend/src/App.tsx\" changes)"
-      ]
-    },
-    {
-      "description": "Navigation/header menu restructuring and responsive header updates.",
-      "reason": "Not requested; BuildRequest says not to change other Home page sections or global styling while fixing the Facebook embed.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions \"frontend/src/components/Header.tsx\" changes)"
-      ]
-    },
-    {
-      "description": "Footer changes (styling/content updates such as contact info, marquee, logo alignment/scaling).",
-      "reason": "Not requested; BuildRequest forbids unrelated section/global styling changes.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions \"frontend/src/components/Footer.tsx\" changes)"
-      ]
-    },
-    {
-      "description": "Multiple other page content/theme adjustments (HistoryPage, OrganizationalStructurePage, CitizenCharterPage, StudentCornerPage, etc.).",
-      "reason": "Not requested by the Facebook embed fix requirements and conflicts with the constraint to avoid unrelated changes.",
-      "evidence": [
-        "frontend-file-summaries.txt (mentions modifications across many frontend/src/pages/*.tsx files)"
+        "project_state.json"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.84,
   "changed_files": [
-    "frontend-file-summaries.txt",
-    "frontend/src/components/FacebookPresenceBlock.tsx",
-    "frontend/src/lib/facebookPagePlugin.ts",
-    "frontend/src/pages/HomePage.tsx",
     "project_state.json"
   ]
 }

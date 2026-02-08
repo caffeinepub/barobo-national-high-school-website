@@ -1,68 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix desktop Facebook Page embed rendering and deterministic fallback on Home page",
+  "title": "Replace principal photo static asset on Home page",
   "requirements": [
     {
-      "id": "REQ-6",
-      "summary": "Update the Home page Facebook presence block so the Barobo National High School Facebook Page timeline reliably renders on desktop/tablet while preserving mobile behavior.",
+      "id": "REQ-13",
+      "summary": "Replace the Home page principal portrait with the newly uploaded 600×600 square PNG asset while keeping the existing public asset path unchanged.",
       "acceptanceCriteria": [
-        "On desktop/tablet viewport widths (>= 768px), the Facebook presence area displays the embedded timeline/posts (not just an empty container).",
-        "On mobile viewport widths (< 768px), the Facebook embed continues to work as it does today.",
-        "The Facebook presence block continues to target the exact page URL: https://www.facebook.com/BaroboNationalHighSchool."
+        "A new principal image is processed to a 600×600 square crop (face centered, slight headroom, head-and-shoulders framing, cropped slightly above the elbows).",
+        "The processed image is saved/updated at frontend/public/assets/generated/principal-photo.dim_600x600.png.",
+        "The Home page continues to display the principal photo correctly using the same path (/assets/generated/principal-photo.dim_600x600.png) with no layout regressions in the Welcome/Principal section."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
+          "path": "frontend/public/assets/generated/principal-photo.dim_600x600.png",
           "operation": "modify",
-          "description": "Replace the current XFBML-based embed with a more reliable desktop-friendly Facebook Page Plugin iframe approach that targets exactly https://www.facebook.com/BaroboNationalHighSchool, and make the embed responsive (derive plugin width from the rendered container) so it renders consistently on md+ viewports."
-        },
-        {
-          "path": "frontend/src/lib/facebookPagePlugin.ts",
-          "operation": "create",
-          "description": "Add a small helper to build the Facebook Page Plugin iframe URL deterministically from inputs (pageUrl, tabs, width, height) while ensuring the pageUrl stays exactly https://www.facebook.com/BaroboNationalHighSchool when used by the Home page Facebook presence block."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Make Facebook embed loading and failure detection deterministic so fallback only shows on genuine failure and never due to fragile DOM checks.",
-      "acceptanceCriteria": [
-        "If the embed loads successfully, the fallback (Facebook icon/link) is not shown.",
-        "If the embed fails to load (simulate by blocking facebook.com or the plugin URL), the fallback is shown within a reasonable time (<= 10 seconds) and links open in a new tab.",
-        "No reliance on fragile DOM queries (e.g., querying for a nested iframe that may not exist until after parsing) causes false negatives in desktop view."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
-          "operation": "modify",
-          "description": "Implement deterministic embed state handling using iframe events and a bounded timeout (<=10s): show a loading state initially, mark success on iframe load, mark failure on iframe error/timeout, and only render the fallback link when failure is confirmed; remove fragile document.querySelector-based checks."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Remove/avoid reliance on the Facebook SDK script injection/XFBML parsing for the Home page Facebook block so the embed's load/failure behavior is controlled entirely by the FacebookPresenceBlock implementation (prevent desktop false negatives triggered by SDK timing/parsing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Preserve the existing Home page two-column layout and height-matching behavior between Weather Forecast and the Facebook block on md+ without affecting other sections or global styling.",
-      "acceptanceCriteria": [
-        "On md+ viewports, the Facebook embed area is constrained to the same overall height as the weather section (as currently intended via maxHeight).",
-        "On small screens, the Facebook block stacks below the weather section and is not artificially height-constrained.",
-        "No changes are introduced to unrelated sections (e.g., School Activities, DepEd section, footer/header) or to global Tailwind theme variables."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
-          "operation": "modify",
-          "description": "Keep the existing maxHeight-driven height constraint behavior for md+ by applying the outer container height only when maxHeight is provided, and ensure the internal embed viewport accounts for header spacing while allowing natural sizing when maxHeight is undefined (mobile)."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Preserve the current grid layout and weather-height measurement behavior; keep passing measured weatherHeight as maxHeight only on md+ viewports and avoid any layout/global styling changes outside the existing Weather + Facebook two-column section."
+          "description": "Replace the existing file with the user’s newly uploaded principal portrait, exported as a clean/sharp perfectly-square 600×600 PNG (1:1), face centered horizontally with slight natural headroom, head-and-shoulders framing, cropped slightly above the elbows. Ensure the filename and location remain exactly frontend/public/assets/generated/principal-photo.dim_600x600.png so the Home page <img> reference continues to work without any layout or styling changes."
         }
       ]
     }

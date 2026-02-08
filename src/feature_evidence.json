@@ -2,12 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-home-page-facebook-presence-block-so-the-embedded-facebook-page-timeline-posts-reliably-render-on-desktop-tablet-not-only-on-mobile-for-https-www-facebook-com-barobonationalhighschool",
-      "featureTitle": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
-      "files": [
-        "frontend/src/components/FacebookPresenceBlock.tsx",
-        "frontend/src/lib/facebookPagePlugin.ts"
-      ],
+      "featureId": "feature-replace-the-existing-principal-photo-used-on-the-home-page-with-the-user-s-newly-uploaded-principal-image-ensuring-the-final-asset-is-a-clean-sharp-perfectly-square-1-1-600-600-png-centered-on-the-face-horizontally-with-slight-natural-headroom-framed-head-and-shoulders-and-cropped-slightly-above-the-elbows-and-saved-as-frontend-public-assets-generated-principal-photo-dim-600x600-png",
+      "featureTitle": "Replace the existing principal photo used on the Home page with the user’s newly uploaded principal image, ensuring the final asset is a clean, sharp, perfectly square (1:1) 600×600 PNG, centered on the face horizontally with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows, and saved as frontend/public/assets/generated/principal-photo.dim_600x600.png.",
+      "files": [],
       "components": [
         "blob-storage@4.0.0",
         "authorization@4.0.0",
@@ -19,51 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-6"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-make-the-facebook-embed-loading-failure-detection-accurate-and-deterministic-so-the-fallback-link-only-appears-when-the-embed-genuinely-cannot-load-e-g-blocked-by-privacy-settings-network-failure-or-embed-error-and-does-not-incorrectly-trigger-on-desktop",
-      "featureTitle": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
-      "files": [
-        "frontend/src/components/FacebookPresenceBlock.tsx",
-        "frontend/src/pages/HomePage.tsx"
-      ],
-      "components": [
-        "blob-storage@4.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-7"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-preserve-the-existing-homepage-two-column-layout-and-the-height-matching-behavior-on-md-viewports-the-right-column-facebook-block-height-must-continue-to-match-the-rendered-height-of-the-left-column-weather-forecast-section-without-affecting-other-home-page-sections-or-global-styling",
-      "featureTitle": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
-      "files": [
-        "frontend/src/components/FacebookPresenceBlock.tsx",
-        "frontend/src/pages/HomePage.tsx"
-      ],
-      "components": [
-        "blob-storage@4.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-8"
+        "REQ-13"
       ],
       "confidence": "high"
     }

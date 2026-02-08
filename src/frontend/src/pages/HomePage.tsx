@@ -5,7 +5,7 @@ import PhilippineTimeClock from '../components/PhilippineTimeClock';
 import WeatherForecastSection from '../components/WeatherForecastSection';
 import FacebookPresenceBlock from '../components/FacebookPresenceBlock';
 import SchoolActivitiesSlider from '../components/SchoolActivitiesSlider';
-import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2 } from 'lucide-react';
+import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2, Users } from 'lucide-react';
 import { useGetBNHSHymnVideo } from '../hooks/useQueries';
 
 export default function HomePage() {
@@ -195,6 +195,73 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Welcome and Faculty Section */}
+        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Left Column: Welcome and Principal */}
+            <div className="space-y-6">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-[#800000]">
+                  Welcome to Barobo National High School Website!
+                </h2>
+                <p className="text-justify text-gray-700 leading-relaxed">
+                  Empowering students to reach their full potential through excellence in education, character development, and community engagement. Committed to providing quality education and nurturing future leaders in our community through excellence in teaching and learning.
+                </p>
+              </div>
+
+              {/* Principal Profile */}
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-shrink-0">
+                    <img
+                      src="/assets/generated/principal-photo.dim_600x600.png"
+                      alt="School Principal - Rachel Methuselah R. Cumahig, PhD"
+                      className="w-full md:w-48 h-auto rounded-lg shadow-md object-cover"
+                    />
+                    <div className="mt-3 text-center">
+                      <p className="font-semibold text-gray-900">Rachel Methuselah R. Cumahig, PhD</p>
+                      <p className="text-sm text-[#800000] font-medium">Principal IV</p>
+                    </div>
+                  </div>
+
+                  {/* Principal Message */}
+                  <div className="flex-1">
+                    <h3 className="mb-3 text-lg font-bold text-[#800000]">Principal's Message</h3>
+                    <p className="text-justify text-gray-700 leading-relaxed">
+                      Welcome to Barobo National High School! As Principal, I am honored to lead this institution dedicated to academic excellence and holistic student development. Our commitment is to provide a nurturing environment where every student can thrive, discover their potential, and become responsible citizens of our nation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Faculty and Staff */}
+            <div className="space-y-6">
+              <div>
+                <div className="mb-4 flex items-center gap-2">
+                  <Users className="h-6 w-6 text-[#800000]" />
+                  <h2 className="text-2xl font-bold text-[#800000]">
+                    Our Dedicated Faculty of JHS, SHS and Staff of Barobo National High School
+                  </h2>
+                </div>
+                <div className="mb-4">
+                  <img
+                    src="/assets/generated/faculty-staff-group.dim_1600x900.png"
+                    alt="Dedicated Faculty of JHS, SHS and Staff of Barobo National High School"
+                    className="w-full h-auto rounded-lg shadow-md object-cover"
+                  />
+                </div>
+                <p className="text-justify text-gray-700 leading-relaxed">
+                  Our school is proud to have a team of dedicated, qualified, and passionate educators who are committed to student success. Our faculty members bring years of experience and expertise to the classroom.
+                </p>
+                <p className="mt-4 text-justify text-gray-700 leading-relaxed">
+                  Through continuous professional development and training, our teachers stay updated with the latest educational methodologies and technologies to provide the best learning experience for our students.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Activities</h2>
 
         <section className="mb-12">
@@ -357,67 +424,56 @@ export default function HomePage() {
 
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
           <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Calendar</h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
-                <span className="text-lg font-bold">01</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">First Quarter</h3>
-                <p className="text-sm text-gray-600">August - October</p>
-              </div>
+          <div className="overflow-hidden rounded-lg shadow-md">
+            <img
+              src="/assets/generated/calendar-header.dim_800x200.jpg"
+              alt="School Calendar"
+              className="h-auto w-full"
+            />
+          </div>
+          <div className="mt-6 space-y-4">
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-2 font-semibold text-[#800000]">First Quarter</h3>
+              <p className="text-gray-700">August 29, 2024 - November 8, 2024</p>
             </div>
-            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
-                <span className="text-lg font-bold">02</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Second Quarter</h3>
-                <p className="text-sm text-gray-600">November - December</p>
-              </div>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-2 font-semibold text-[#800000]">Second Quarter</h3>
+              <p className="text-gray-700">November 11, 2024 - January 31, 2025</p>
             </div>
-            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
-                <span className="text-lg font-bold">03</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Third Quarter</h3>
-                <p className="text-sm text-gray-600">January - March</p>
-              </div>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-2 font-semibold text-[#800000]">Third Quarter</h3>
+              <p className="text-gray-700">February 3, 2025 - April 11, 2025</p>
             </div>
-            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
-                <span className="text-lg font-bold">04</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Fourth Quarter</h3>
-                <p className="text-sm text-gray-600">April - June</p>
-              </div>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-2 font-semibold text-[#800000]">Fourth Quarter</h3>
+              <p className="text-gray-700">April 14, 2025 - June 27, 2025</p>
             </div>
           </div>
         </section>
 
-        {hymnVideo && (
-          <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-            <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
-            <div className="mx-auto max-w-3xl">
-              {hymnLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#800000]" />
-                </div>
-              ) : (
-                <video
-                  ref={videoRef}
-                  controls
-                  className="w-full rounded-lg shadow-lg"
-                  src={hymnVideo.getDirectURL()}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              )}
+        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
+          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
+          {hymnLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-[#800000]" />
             </div>
-          </section>
-        )}
+          ) : hymnVideo ? (
+            <div className="mx-auto max-w-4xl">
+              <video
+                ref={videoRef}
+                controls
+                className="w-full rounded-lg shadow-lg"
+                src={hymnVideo.getDirectURL()}
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          ) : (
+            <div className="rounded-lg bg-gray-50 p-8 text-center">
+              <p className="text-gray-600">BNHS Hymn video will be available soon.</p>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

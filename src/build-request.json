@@ -1,75 +1,50 @@
 {
   "kind": "build_request",
-  "title": "Fix Facebook embedded posts not appearing on desktop view",
+  "title": "Replace the principal photo on the Home page",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-6",
-      "text": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
+      "id": "REQ-13",
+      "text": "Replace the existing principal photo used on the Home page with the user’s newly uploaded principal image, ensuring the final asset is a clean, sharp, perfectly square (1:1) 600×600 PNG, centered on the face horizontally with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows, and saved as frontend/public/assets/generated/principal-photo.dim_600x600.png.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
+          "I would like to change the image of the principal that I uploaded already"
         ]
       },
       "acceptanceCriteria": [
-        "On desktop/tablet viewport widths (>= 768px), the Facebook presence area displays the embedded timeline/posts (not just an empty container).",
-        "On mobile viewport widths (< 768px), the Facebook embed continues to work as it does today.",
-        "The Facebook presence block continues to target the exact page URL: https://www.facebook.com/BaroboNationalHighSchool."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
-        ]
-      },
-      "acceptanceCriteria": [
-        "If the embed loads successfully, the fallback (Facebook icon/link) is not shown.",
-        "If the embed fails to load (simulate by blocking facebook.com or the plugin URL), the fallback is shown within a reasonable time (<= 10 seconds) and links open in a new tab.",
-        "No reliance on fragile DOM queries (e.g., querying for a nested iframe that may not exist until after parsing) causes false negatives in desktop view."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
-        ]
-      },
-      "acceptanceCriteria": [
-        "On md+ viewports, the Facebook embed area is constrained to the same overall height as the weather section (as currently intended via maxHeight).",
-        "On small screens, the Facebook block stacks below the weather section and is not artificially height-constrained.",
-        "No changes are introduced to unrelated sections (e.g., School Activities, DepEd section, footer/header) or to global Tailwind theme variables."
+        "A new principal image is processed to a 600×600 square crop (face centered, slight headroom, head-and-shoulders framing, cropped slightly above the elbows).",
+        "The processed image is saved/updated at frontend/public/assets/generated/principal-photo.dim_600x600.png.",
+        "The Home page continues to display the principal photo correctly using the same path (/assets/generated/principal-photo.dim_600x600.png) with no layout regressions in the Welcome/Principal section."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Keep the Facebook page URL exactly as: https://www.facebook.com/BaroboNationalHighSchool.",
-    "Do not change other Home page sections or global styling when fixing the desktop Facebook embed rendering."
+    "Do not change other Home page sections or global styling; only update the principal photo asset and any minimal references required to keep it displaying correctly.",
+    "Do not route the principal photo through the backend; keep it as a static frontend asset under frontend/public/assets/generated.",
+    "Do not edit files under frontend/src/components/ui or other frontend immutablePaths."
   ],
   "nonGoals": [
-    "Adding new social platforms or social media API integrations beyond the existing Facebook presence block.",
-    "Backend changes (Motoko) or new backend endpoints for Facebook content.",
-    "Real-time updates or notifications for Facebook posts."
+    "Creating new admin-panel functionality for uploading/changing the principal image (this request is limited to replacing the already-uploaded principal image asset).",
+    "Changing the principal name/title/message text or the Faculty/Staff image/content."
   ],
   "imageRequirements": {
     "required": [],
-    "edits": []
+    "edits": [
+      "Replace the principal portrait with the new uploaded image and re-export as a clean square 600×600 PNG (principal-photo.dim_600x600.png > principal-photo.dim_600x600.png)"
+    ]
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

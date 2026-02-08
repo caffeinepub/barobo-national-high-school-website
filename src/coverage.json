@@ -1,52 +1,24 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T03:17:12.070Z",
+  "generatedAt": "2026-02-08T07:19:21.163Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-6",
-        "summary": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
+        "id": "REQ-13",
+        "summary": "Replace the existing principal photo used on the Home page with the user’s newly uploaded principal image, ensuring the final asset is a clean, sharp, perfectly square (1:1) 600×600 PNG, centered on the face horizontally with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows, and saved as frontend/public/assets/generated/principal-photo.dim_600x600.png.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/lib/facebookPagePlugin.ts"
+          "frontend/public/assets/generated/principal-photo.dim_600x600.png"
         ],
         "matchedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/lib/facebookPagePlugin.ts"
-        ]
-      },
-      {
-        "id": "REQ-7",
-        "summary": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/pages/HomePage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/pages/HomePage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-8",
-        "summary": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/pages/HomePage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FacebookPresenceBlock.tsx",
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/public/assets/generated/principal-photo.dim_600x600.png"
         ]
       }
     ]
@@ -54,11 +26,8 @@
   "changedFiles": [
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/FacebookPresenceBlock.tsx",
-    "frontend/src/lib/facebookPagePlugin.ts",
-    "frontend/src/pages/HomePage.tsx",
+    "frontend/public/assets/generated/principal-photo.dim_600x600.png",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
