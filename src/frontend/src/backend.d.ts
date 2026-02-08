@@ -317,10 +317,12 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVisitorAnalytics(): Promise<AnalyticsPeriod>;
     initializeResources(): Promise<void>;
+    initializeSuperAdmin(): Promise<Principal>;
     isCallerAdmin(): Promise<boolean>;
     proxyPublicImage(imageUrl: string, extraHeaders: Array<Header>): Promise<string>;
     recordLogin(): Promise<void>;
     recordVisitor(sessionId: string): Promise<void>;
+    recoverSuperAdmin(): Promise<string>;
     removeBNHSHymn(): Promise<void>;
     removeCitizenCharterBackgroundImage(): Promise<void>;
     removeCitizenCharterStaticImage(): Promise<void>;

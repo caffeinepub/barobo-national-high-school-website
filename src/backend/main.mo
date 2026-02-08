@@ -10,7 +10,6 @@ import Nat16 "mo:core/Nat16";
 import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-
 import OutCall "http-outcalls/outcall";
 
 actor {
@@ -46,24 +45,63 @@ actor {
 
   let userProfiles = Map.empty<Principal, UserProfile>();
   let adminUsers = Map.empty<Principal, AdminUserData>();
+
   var superAdminPrincipal : ?Principal = null;
   var isInitialized : Bool = false;
 
   var accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  func ensureSuperAdminInitialized(caller : Principal) {
-    if (not isInitialized and not caller.isAnonymous()) {
-      superAdminPrincipal := ?caller;
-      AccessControl.initialize(accessControlState, caller, "", "");
-      isInitialized := true;
+  public shared ({ caller }) func initializeSuperAdmin() : async Principal {
+    if (isInitialized) {
+      Runtime.trap(
+        "Unauthorized: Super Admin is already initialized. Use recoverSuperAdmin if you are the registered Super Admin."
+      );
+    };
 
-      let superAdminProfile : UserProfile = {
-        name = "Super Admin";
-        email = "";
-        role = "SuperAdmin";
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous caller cannot be set as Super Admin.");
+    };
+
+    superAdminPrincipal := ?caller;
+    AccessControl.initialize(accessControlState, caller, "", "");
+    isInitialized := true;
+
+    let superAdminProfile : UserProfile = {
+      name = "Super Admin";
+      email = "";
+      role = "SuperAdmin";
+    };
+    userProfiles.add(caller, superAdminProfile);
+
+    caller;
+  };
+
+  public shared ({ caller }) func recoverSuperAdmin() : async Text {
+    if (not isInitialized) {
+      Runtime.trap(
+        "Unauthorized: Super Admin is not initialized. Use initializeSuperAdmin first."
+      );
+    };
+
+    switch (superAdminPrincipal) {
+      case (null) {
+        Runtime.trap("Internal Error: Super Admin principal is null despite initialization flag being true.");
       };
-      userProfiles.add(caller, superAdminProfile);
+      case (?superAdmin) {
+        if (not Principal.equal(caller, superAdmin)) {
+          Runtime.trap("Unauthorized: Only the registered Super Admin can recover access.");
+        };
+        "Super Admin access confirmed for principal: " # caller.toText();
+      };
+    };
+  };
+
+  func requireInitialized() {
+    if (not isInitialized) {
+      Runtime.trap(
+        "System Error: Super Admin must be initialized first. Please contact the system administrator."
+      );
     };
   };
 
@@ -107,6 +145,7 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    requireInitialized();
     if (caller != user and not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile or must be admin");
     };
@@ -114,7 +153,6 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    ensureSuperAdminInitialized(caller);
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can save their profile");
     };
@@ -127,7 +165,7 @@ actor {
     email : Text,
     permissions : [AdminPermission]
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can create Admin Users");
     };
@@ -161,7 +199,7 @@ actor {
     userPrincipal : Principal,
     permissions : [AdminPermission]
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can update Admin User permissions");
     };
@@ -178,8 +216,11 @@ actor {
     };
   };
 
-  public shared ({ caller }) func setAdminUserStatus(userPrincipal : Principal, isActive : Bool) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func setAdminUserStatus(
+    userPrincipal : Principal,
+    isActive : Bool
+  ) : async () {
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can change Admin User status");
     };
@@ -197,7 +238,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteAdminUser(userPrincipal : Principal) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can delete Admin Users");
     };
@@ -207,13 +248,17 @@ actor {
   };
 
   public query ({ caller }) func getAllAdminUsers() : async [AdminUserData] {
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can view all Admin Users");
     };
     adminUsers.values().toArray();
   };
 
-  public query ({ caller }) func getAdminUser(userPrincipal : Principal) : async AdminUserData {
+  public query ({ caller }) func getAdminUser(
+    userPrincipal : Principal
+  ) : async AdminUserData {
+    requireInitialized();
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only Super Admin can view Admin User details");
     };
@@ -224,7 +269,6 @@ actor {
   };
 
   public query ({ caller }) func getCallerRole() : async Text {
-    // Check role without initialization since this is a query
     if (isSuperAdmin(caller)) {
       return "SuperAdmin";
     };
@@ -316,7 +360,7 @@ actor {
   };
 
   public shared ({ caller }) func recordLogin() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       return;
     };
@@ -374,6 +418,7 @@ actor {
   };
 
   public query ({ caller }) func getVisitorAnalytics() : async AnalyticsPeriod {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view analytics");
     };
@@ -390,6 +435,7 @@ actor {
   };
 
   public query ({ caller }) func getLoginAnalytics() : async AnalyticsPeriod {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view analytics");
     };
@@ -406,6 +452,7 @@ actor {
   };
 
   public query ({ caller }) func getRecentLoginRecords(limit : Nat) : async [LoginRecord] {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view login records");
     };
@@ -477,6 +524,7 @@ actor {
   };
 
   public query ({ caller }) func getStorageStats() : async StorageStats {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view storage statistics");
     };
@@ -498,6 +546,7 @@ actor {
   };
 
   public query ({ caller }) func getFileTypeBreakdown() : async FileTypeBreakdown {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view file type breakdown");
     };
@@ -545,7 +594,7 @@ actor {
     title : Text,
     description : Text,
   ) : async BannerImage {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageBanners)) {
       Runtime.trap("Unauthorized: You need ManageBanners permission");
     };
@@ -565,7 +614,7 @@ actor {
   };
 
   public shared ({ caller }) func activateBanner(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageBanners)) {
       Runtime.trap("Unauthorized: You need ManageBanners permission");
     };
@@ -580,7 +629,7 @@ actor {
   };
 
   public shared ({ caller }) func deactivateBanner(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageBanners)) {
       Runtime.trap("Unauthorized: You need ManageBanners permission");
     };
@@ -619,7 +668,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteBanner(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageBanners)) {
       Runtime.trap("Unauthorized: You need ManageBanners permission");
     };
@@ -638,7 +687,7 @@ actor {
     title : Text,
     description : Text
   ) : async BannerImage {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageBanners)) {
       Runtime.trap("Unauthorized: You need ManageBanners permission");
     };
@@ -702,7 +751,7 @@ actor {
     members : [Text],
     activities : [Text]
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageClubs)) {
       Runtime.trap("Unauthorized: You need ManageClubs permission");
     };
@@ -735,7 +784,7 @@ actor {
     members : [Text],
     activities : [Text]
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageClubs)) {
       Runtime.trap("Unauthorized: You need ManageClubs permission");
     };
@@ -755,7 +804,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteClubOrganization(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageClubs)) {
       Runtime.trap("Unauthorized: You need ManageClubs permission");
     };
@@ -787,7 +836,7 @@ actor {
     title : Text,
     description : Text
   ) : async Nat {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageSlider)) {
       Runtime.trap("Unauthorized: You need ManageSlider permission");
     };
@@ -813,7 +862,7 @@ actor {
     description : Text,
     displayOrder : Nat
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageSlider)) {
       Runtime.trap("Unauthorized: You need ManageSlider permission");
     };
@@ -836,7 +885,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteSliderImage(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageSlider)) {
       Runtime.trap("Unauthorized: You need ManageSlider permission");
     };
@@ -858,7 +907,7 @@ actor {
   };
 
   public shared ({ caller }) func reorderSliderImages(newOrder : [Nat]) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageSlider)) {
       Runtime.trap("Unauthorized: You need ManageSlider permission");
     };
@@ -894,7 +943,7 @@ actor {
   };
 
   public shared ({ caller }) func swapSliderImages(id1 : Nat, id2 : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageSlider)) {
       Runtime.trap("Unauthorized: You need ManageSlider permission");
     };
@@ -933,7 +982,7 @@ actor {
   };
 
   public shared ({ caller }) func proxyPublicImage(imageUrl : Text, extraHeaders : [OutCall.Header]) : async Text {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can use the proxy endpoint to prevent abuse");
     };
@@ -983,7 +1032,7 @@ actor {
     title : Text,
     formattedText : FormattedText
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1006,7 +1055,7 @@ actor {
   public shared ({ caller }) func setHistoryBackgroundImage(
     backgroundImage : Storage.ExternalBlob
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1027,7 +1076,7 @@ actor {
   };
 
   public shared ({ caller }) func removeHistoryBackgroundImage() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1046,7 +1095,7 @@ actor {
   public shared ({ caller }) func setOrganizationalChartBackground(
     orgChartBackground : Storage.ExternalBlob
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1066,7 +1115,7 @@ actor {
   };
 
   public shared ({ caller }) func removeOrganizationalChartBackground() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1085,7 +1134,7 @@ actor {
   public shared ({ caller }) func setOrganizationalStructureTitleBackground(
     titleBackground : Storage.ExternalBlob
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1101,7 +1150,7 @@ actor {
   };
 
   public shared ({ caller }) func removeOrganizationalStructureTitleBackground() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1121,7 +1170,7 @@ actor {
   public shared ({ caller }) func setOrganizationalStructureStaticImage(
     staticImage : Storage.ExternalBlob
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1137,7 +1186,7 @@ actor {
   };
 
   public shared ({ caller }) func removeOrganizationalStructureStaticImage() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHeritage)) {
       Runtime.trap("Unauthorized: You need ManageHeritage permission");
     };
@@ -1156,7 +1205,9 @@ actor {
 
   public query func getHeritageSection() : async HeritageSectionContent {
     switch (heritageSection) {
-      case (null) { Runtime.trap("No content found in the Heritage Section. Please add content first!") };
+      case (null) {
+        Runtime.trap("No content found in the Heritage Section. Please add content first!");
+      };
       case (?section) { section };
     };
   };
@@ -1175,13 +1226,17 @@ actor {
   };
 
   public query ({ caller }) func getHistoryBackgroundImage(timestamp : Int) : async ?Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical background images");
     };
     historyBackgroundImages.get(timestamp);
   };
 
-  public query ({ caller }) func getHistoryBackgroundImageById(timestamp : Int) : async Storage.ExternalBlob {
+  public query ({ caller }) func getHistoryBackgroundImageById(
+    timestamp : Int,
+  ) : async Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical background images");
     };
@@ -1199,7 +1254,7 @@ actor {
   var bnhsHymnContent : ?BNHSHymnContent = null;
 
   public shared ({ caller }) func setBNHSHymn(videoFile : Storage.ExternalBlob) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHymn)) {
       Runtime.trap("Unauthorized: You need ManageHymn permission");
     };
@@ -1211,7 +1266,7 @@ actor {
   };
 
   public shared ({ caller }) func removeBNHSHymn() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageHymn)) {
       Runtime.trap("Unauthorized: You need ManageHymn permission");
     };
@@ -1260,8 +1315,10 @@ actor {
 
   var citizenCharterContactInfo : ?CitizenCharterContactInfo = null;
 
-  public shared ({ caller }) func setCitizenCharterBackgroundImage(backgroundImage : Storage.ExternalBlob) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func setCitizenCharterBackgroundImage(
+    backgroundImage : Storage.ExternalBlob
+  ) : async () {
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1275,7 +1332,7 @@ actor {
   };
 
   public shared ({ caller }) func removeCitizenCharterBackgroundImage() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1296,14 +1353,20 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCitizenCharterBackgroundImage(timestamp : Int) : async ?Storage.ExternalBlob {
+  public query ({ caller }) func getCitizenCharterBackgroundImage(
+    timestamp : Int
+  ) : async ?Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical background images");
     };
     citizenCharterBackgroundImages.get(timestamp);
   };
 
-  public query ({ caller }) func getCitizenCharterBackgroundImageById(timestamp : Int) : async Storage.ExternalBlob {
+  public query ({ caller }) func getCitizenCharterBackgroundImageById(
+    timestamp : Int
+  ) : async Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical background images");
     };
@@ -1313,8 +1376,10 @@ actor {
     };
   };
 
-  public shared ({ caller }) func setCitizenCharterStaticImage(staticImage : Storage.ExternalBlob) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func setCitizenCharterStaticImage(
+    staticImage : Storage.ExternalBlob
+  ) : async () {
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1327,7 +1392,7 @@ actor {
   };
 
   public shared ({ caller }) func removeCitizenCharterStaticImage() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1347,14 +1412,20 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCitizenCharterStaticImageByTimestamp(timestamp : Int) : async ?Storage.ExternalBlob {
+  public query ({ caller }) func getCitizenCharterStaticImageByTimestamp(
+    timestamp : Int
+  ) : async ?Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical static images");
     };
     citizenCharterStaticImages.get(timestamp);
   };
 
-  public query ({ caller }) func getCitizenCharterStaticImageById(timestamp : Int) : async Storage.ExternalBlob {
+  public query ({ caller }) func getCitizenCharterStaticImageById(
+    timestamp : Int
+  ) : async Storage.ExternalBlob {
+    requireInitialized();
     if (not isAnyAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can access historical static images");
     };
@@ -1365,7 +1436,7 @@ actor {
   };
 
   public shared ({ caller }) func updateCitizenCharterContactInfo() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1421,7 +1492,7 @@ actor {
     achievements : Text,
     currentPosition : Text
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageAlumni)) {
       Runtime.trap("Unauthorized: You need ManageAlumni permission");
     };
@@ -1454,7 +1525,7 @@ actor {
     achievements : Text,
     currentPosition : Text
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageAlumni)) {
       Runtime.trap("Unauthorized: You need ManageAlumni permission");
     };
@@ -1474,7 +1545,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteAlumniProfile(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageAlumni)) {
       Runtime.trap("Unauthorized: You need ManageAlumni permission");
     };
@@ -1486,8 +1557,12 @@ actor {
     };
   };
 
-  public shared ({ caller }) func updateAlumniContent(title : Text, description : Text, communityEngagement : Text) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func updateAlumniContent(
+    title : Text,
+    description : Text,
+    communityEngagement : Text
+  ) : async () {
+    requireInitialized();
     if (not hasPermission(caller, #ManageAlumni)) {
       Runtime.trap("Unauthorized: You need ManageAlumni permission");
     };
@@ -1527,13 +1602,17 @@ actor {
   };
 
   public shared ({ caller }) func initializeResources() : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageResources)) {
       Runtime.trap("Unauthorized: You need ManageResources permission");
     };
 
     addResourceSubcategory("DepEd TV", "https://www.youtube.com/@DepEdTV", true);
-    addResourceSubcategory("Learning Materials and Resources", "https://1drv.ms/f/c/bac784056b95594f/IgB25szVm3tfQJwK0KpTVfB3AdNyOkxnOty8rbrcufL06I0?e=zbZ9hC", true);
+    addResourceSubcategory(
+      "Learning Materials and Resources",
+      "https://1drv.ms/f/c/bac784056b95594f/IgB25szVm3tfQJwK0KpTVfB3AdNyOkxnOty8rbrcufL06I0?e=zbZ9hC",
+      true,
+    );
     addResourceSubcategory("DepEd EdTech Unit", "https://www.youtube.com/@EducationalTechnologyUnit", true);
   };
 
@@ -1571,7 +1650,7 @@ actor {
     phone : Text,
     email : Text
   ) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageFooter)) {
       Runtime.trap("Unauthorized: You need ManageFooter permission");
     };
@@ -1586,7 +1665,7 @@ actor {
   };
 
   public shared ({ caller }) func updateFooterSocialMedia(facebookUrl : Text) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageFooter)) {
       Runtime.trap("Unauthorized: You need ManageFooter permission");
     };
@@ -1657,7 +1736,7 @@ actor {
   var nextSchoolHoursId = 1;
 
   public shared ({ caller }) func createContactInfoSection(content : Text) : async Nat {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1678,7 +1757,7 @@ actor {
   };
 
   public shared ({ caller }) func updateContactInfoSection(id : Nat, content : Text) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1697,7 +1776,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteContactInfoSection(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1722,7 +1801,7 @@ actor {
   };
 
   public shared ({ caller }) func createOfficeHoursSection(content : Text) : async Nat {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1742,8 +1821,11 @@ actor {
     id;
   };
 
-  public shared ({ caller }) func updateOfficeHoursSection(id : Nat, content : Text) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func updateOfficeHoursSection(
+    id : Nat,
+    content : Text
+  ) : async () {
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1762,7 +1844,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteOfficeHoursSection(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1787,7 +1869,7 @@ actor {
   };
 
   public shared ({ caller }) func createSchoolHoursSection(content : Text) : async Nat {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1807,8 +1889,11 @@ actor {
     id;
   };
 
-  public shared ({ caller }) func updateSchoolHoursSection(id : Nat, content : Text) : async () {
-    ensureSuperAdminInitialized(caller);
+  public shared ({ caller }) func updateSchoolHoursSection(
+    id : Nat,
+    content : Text
+  ) : async () {
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1827,7 +1912,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteSchoolHoursSection(id : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageCitizenCharter)) {
       Runtime.trap("Unauthorized: You need ManageCitizenCharter permission");
     };
@@ -1864,7 +1949,7 @@ actor {
   var depedVisionContent : ?DepEdVisionContent = null;
 
   public shared ({ caller }) func updateDepEdVision(newVersion : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageFooter)) {
       Runtime.trap("Unauthorized: You need ManageFooter permission");
     };
@@ -1872,7 +1957,8 @@ actor {
     depedVisionContent := ?{
       lastUpdated = Time.now();
       version = newVersion;
-      vision = "We dream of Filipinos \n who passionately love their country \n and whose values and competencies \n enable them to realize their full potential \n and contribute meaningfully to building the nation. \n \n As a learner-centered public institution, \n the Department of Education \n continuously improves itself \n to better serve its stakeholders.";
+      vision =
+        "We dream of Filipinos \n who passionately love their country \n and whose values and competencies \n enable them to realize their full potential \n and contribute meaningfully to building the nation. \n \n As a learner-centered public institution, \n the Department of Education \n continuously improves itself \n to better serve its stakeholders.";
       mission = "MISSION (unchanged)";
       coreValues = "CORE VALUES (unchanged)";
       mandates =
@@ -1897,7 +1983,7 @@ actor {
   var depedMissionContent : ?DepEdMissionContent = null;
 
   public shared ({ caller }) func updateDepEdMission(newVersion : Nat) : async () {
-    ensureSuperAdminInitialized(caller);
+    requireInitialized();
     if (not hasPermission(caller, #ManageFooter)) {
       Runtime.trap("Unauthorized: You need ManageFooter permission");
     };
@@ -1905,7 +1991,8 @@ actor {
     depedMissionContent := ?{
       lastUpdated = Time.now();
       version = newVersion;
-      mission = "To protect and promote the right of every Filipino to quality, equitable, culture-based, and complete basic education where: \n \n \u{2013} **Students** learn in a child-friendly, gender-sensitive, safe, and motivating environment. \n \n \u{2013} **Teachers** facilitate learning and constantly nurture every learner. \n \n \u{2013} **Administrators and staff**, as stewards of the institution, ensure an enabling and supportive environment for effective learning to happen. \n \n \u{2013} **Family, community, and other stakeholders** are actively engaged and share responsibility for developing life-long learners.";
+      mission =
+        "To protect and promote the right of every Filipino to quality, equitable, culture-based, and complete basic education where: \n \n \u{2013} **Students** learn in a child-friendly, gender-sensitive, safe, and motivating environment. \n \n \u{2013} **Teachers** facilitate learning and constantly nurture every learner. \n \n \u{2013} **Administrators and staff**, as stewards of the institution, ensure an enabling and supportive environment for effective learning to happen. \n \n \u{2013} **Family, community, and other stakeholders** are actively engaged and share responsibility for developing life-long learners.";
     };
   };
 

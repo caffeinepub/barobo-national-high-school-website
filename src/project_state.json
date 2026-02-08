@@ -1,17 +1,18 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 15,
+  "projectStateVersion": 17,
   "summary": "Home page enhancements now also include making the Principal section content (photo/name/position/message) and the Faculty/Staff group photo editable via the admin panel, plus updating the principal photo to a clean 600×600 square-cropped image.",
   "architectural_notes": [
     "Role/permission state may load before backend role initialization completes; ensure role is resolved deterministically on login (avoid transient 'Unknown'/'User').",
-    "If homepage images become admin-uploaded, decide storage strategy (e.g., store URLs/assets and metadata) and ensure updates do not impact other pages/components; Faculty/Staff section remains image-only while Principal section supports full content CRUD."
+    "If homepage images become admin-uploaded, decide storage strategy (e.g., store URLs/assets and metadata) and ensure updates do not impact other pages/components; Faculty/Staff section remains image-only while Principal section supports full content CRUD.",
+    "Draft deployments use fresh backend state; ensure Super Admin/role assignment is stored in stable state and provide a secure recovery/initialization flow (and/or always display the current Principal ID in-app) so admins can re-establish access after redeployments/updates."
   ],
   "known_issues": [
     "Login role is inconsistent (sometimes 'Unknown' or 'User') and can lead to 'You don't have any permissions assigned yet' despite being intended as Super Admin.",
-    "Facebook embedded Page feed/posts do not appear in desktop view (posts only show on mobile)."
+    "Facebook embedded Page feed/posts do not appear in desktop view (posts only show on mobile).",
+    "In draft deployments, admin role can appear as User/Guest/Unknown even when live works, indicating Super Admin/role state is not persisted/initialized consistently across canister rebuilds; user requests an alternate recovery path to regain Super Admin access."
   ],
   "isFixRequest": true,
-  "imageRequirements": "## Edit Images\n- Replace the principal portrait with the new uploaded image and re-export as a clean square 600×600 PNG (principal-photo.dim_600x600.png > principal-photo.dim_600x600.png)",
   "existing_features": [
     {
       "id": "feature-add-a-weather-forecast-section-for-barobo-caraga-on-the-home-page-frontend-src-pages-homepage-tsx-positioned-directly-below-the-philippine-standard-time-display-the-philippinetimeclock-area",
@@ -116,6 +117,30 @@
         "REQ-13"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-dashboard-ui-frontend-src-pages-admindashboardpage-tsx-to-always-show-the-currently-logged-in-principal-id-from-the-internet-identity-identity-object-with-a-copy-to-clipboard-control-so-the-user-can-reliably-identify-their-principal-even-if-backend-role-permissions-are-temporarily-unknown",
+      "title": "Update the Admin Dashboard UI (frontend/src/pages/AdminDashboardPage.tsx) to always show the currently logged-in Principal ID (from the Internet Identity identity object) with a copy-to-clipboard control, so the user can reliably identify their Principal even if backend role/permissions are temporarily \"Unknown\".",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-super-admin-recovery-section-on-the-admin-dashboard-that-provides-an-alternate-way-to-regain-access-by-triggering-the-new-backend-recovery-initialization-api-and-clearly-communicating-outcomes-in-english-success-error-show-this-section-only-when-the-user-is-logged-in-but-does-not-currently-have-super-admin-access",
+      "title": "Add a \"Super Admin Recovery\" section on the Admin Dashboard that provides an alternate way to regain access by triggering the new backend recovery/initialization API and clearly communicating outcomes in English (success/error). Show this section only when the user is logged in but does not currently have Super Admin access.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-post-login-admin-experience-reliably-resolve-the-correct-role-by-ensuring-a-role-initializing-shared-call-is-executed-after-a-successful-internet-identity-login-so-the-system-does-not-remain-stuck-showing-role-unknown-guest-due-to-only-query-calls-being-made",
+      "title": "Make the post-login admin experience reliably resolve the correct role by ensuring a role-initializing shared call is executed after a successful Internet Identity login (so the system does not remain stuck showing role \"Unknown\"/\"Guest\" due to only query calls being made).",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -159,6 +184,28 @@
       "id": "AR-7",
       "summary": "Replace/update the Principal photo asset using a clean 1:1 square crop and display it as a 600×600px image on the Home page",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Provide an alternative/admin recovery method to regain Super Admin access when the role shows as User/Unknown (e.g., show the logged-in Principal ID in the UI and/or add a secure Super Admin re-initialization/reset flow that does not rely on external tools like whoami.ic0.app)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Persist Super Admin identity and initialization state across canister upgrades so Super Admin access does not get lost after rebuilds/updates.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Add a deterministic, authenticated Super Admin recovery/initialization API that allows regaining Super Admin access without relying on the user finding/copying a Principal ID from external tools. The flow must be safe-by-default and must not allow anonymous callers to become Super Admin.",
+      "reqIds": [
+        "REQ-15"
+      ],
       "status": "pending"
     }
   ],

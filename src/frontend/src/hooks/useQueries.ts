@@ -102,6 +102,47 @@ export function useGetCallerPermissions() {
   });
 }
 
+// Super Admin Recovery
+export function useRecoverSuperAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.recoverSuperAdmin();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['callerRole'] });
+      await queryClient.invalidateQueries({ queryKey: ['callerPermissions'] });
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await queryClient.refetchQueries({ queryKey: ['callerRole'], type: 'active' });
+      await queryClient.refetchQueries({ queryKey: ['callerPermissions'], type: 'active' });
+    },
+  });
+}
+
+// Initialize Admin Session (post-login role initialization)
+export function useInitializeAdminSession() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      // Call recordLogin to ensure backend initializes the session
+      await actor.recordLogin();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['callerRole'] });
+      await queryClient.invalidateQueries({ queryKey: ['callerPermissions'] });
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await queryClient.refetchQueries({ queryKey: ['callerRole'], type: 'active' });
+      await queryClient.refetchQueries({ queryKey: ['callerPermissions'], type: 'active' });
+    },
+  });
+}
+
 // Admin User Management (Super Admin only)
 export function useGetAllAdminUsers() {
   const { actor, isFetching } = useActor();
@@ -715,137 +756,24 @@ export function useUpdateOrgChartBackground() {
   });
 }
 
-export function useRemoveOrgChartBackground() {
+export function useRemoveHistoryBackgroundImage() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      await actor.removeOrganizationalChartBackground();
+      await actor.removeHistoryBackgroundImage();
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['historyContent'] });
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
       
       await new Promise(resolve => setTimeout(resolve, 300));
       
       await queryClient.refetchQueries({ queryKey: ['historyContent'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
     },
     onError: (error: any) => {
-      console.error('Org chart background remove error:', error);
-      throw error;
-    },
-  });
-}
-
-// Organizational Structure Management
-export function useGetOrganizationalStructure() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<OrganizationalStructureContent>({
-    queryKey: ['organizationalStructure'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getOrganizationalStructure();
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
-  });
-}
-
-export function useUpdateOrgStructureTitleBackground() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (titleBackground: ExternalBlob) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.setOrganizationalStructureTitleBackground(titleBackground);
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure title background update error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useRemoveOrgStructureTitleBackground() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.removeOrganizationalStructureTitleBackground();
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure title background remove error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useUpdateOrgStructureStaticImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (staticImage: ExternalBlob) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.setOrganizationalStructureStaticImage(staticImage);
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure static image update error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useRemoveOrgStructureStaticImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.removeOrganizationalStructureStaticImage();
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure static image remove error:', error);
+      console.error('History background removal error:', error);
       throw error;
     },
   });
@@ -916,7 +844,7 @@ export function useRemoveCitizenCharterBackground() {
       await queryClient.refetchQueries({ queryKey: ['citizenCharterBackground'], type: 'active' });
     },
     onError: (error: any) => {
-      console.error('Citizen Charter background remove error:', error);
+      console.error('Citizen Charter background removal error:', error);
       throw error;
     },
   });
@@ -987,14 +915,13 @@ export function useRemoveCitizenCharterStaticImage() {
       await queryClient.refetchQueries({ queryKey: ['citizenCharterStaticImage'], type: 'active' });
     },
     onError: (error: any) => {
-      console.error('Citizen Charter static image remove error:', error);
+      console.error('Citizen Charter static image removal error:', error);
       throw error;
     },
   });
 }
 
-// Contact Info Section CRUD
-export function useGetAllContactInfoSections() {
+export function useGetContactInfoSections() {
   const { actor, isFetching } = useActor();
 
   return useQuery<ContactInfoSection[]>({
@@ -1007,6 +934,7 @@ export function useGetAllContactInfoSections() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -1019,12 +947,8 @@ export function useCreateContactInfoSection() {
       if (!actor) throw new Error('Actor not available');
       return actor.createContactInfoSection(content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contactInfoSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['contactInfoSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1038,12 +962,8 @@ export function useUpdateContactInfoSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateContactInfoSection(id, content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contactInfoSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['contactInfoSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1057,18 +977,13 @@ export function useDeleteContactInfoSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.deleteContactInfoSection(id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contactInfoSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['contactInfoSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
 
-// Office Hours Section CRUD
-export function useGetAllOfficeHoursSections() {
+export function useGetOfficeHoursSections() {
   const { actor, isFetching } = useActor();
 
   return useQuery<OfficeHoursSection[]>({
@@ -1081,6 +996,7 @@ export function useGetAllOfficeHoursSections() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -1093,12 +1009,8 @@ export function useCreateOfficeHoursSection() {
       if (!actor) throw new Error('Actor not available');
       return actor.createOfficeHoursSection(content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['officeHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['officeHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1112,12 +1024,8 @@ export function useUpdateOfficeHoursSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateOfficeHoursSection(id, content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['officeHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['officeHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1131,18 +1039,13 @@ export function useDeleteOfficeHoursSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.deleteOfficeHoursSection(id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['officeHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['officeHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
 
-// School Hours Section CRUD
-export function useGetAllSchoolHoursSections() {
+export function useGetSchoolHoursSections() {
   const { actor, isFetching } = useActor();
 
   return useQuery<SchoolHoursSection[]>({
@@ -1155,6 +1058,7 @@ export function useGetAllSchoolHoursSections() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -1167,12 +1071,8 @@ export function useCreateSchoolHoursSection() {
       if (!actor) throw new Error('Actor not available');
       return actor.createSchoolHoursSection(content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schoolHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['schoolHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1186,12 +1086,8 @@ export function useUpdateSchoolHoursSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateSchoolHoursSection(id, content);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schoolHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['schoolHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1205,12 +1101,8 @@ export function useDeleteSchoolHoursSection() {
       if (!actor) throw new Error('Actor not available');
       await actor.deleteSchoolHoursSection(id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schoolHoursSections'] });
-      queryClient.invalidateQueries({ queryKey: ['citizenCharterContactInfo'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['schoolHoursSections'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterContactInfo'], type: 'active' });
     },
   });
 }
@@ -1218,11 +1110,18 @@ export function useDeleteSchoolHoursSection() {
 export function useGetAlumniContent() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<AlumniContent>({
+  return useQuery<AlumniContent | null>({
     queryKey: ['alumniContent'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getAlumniContent();
+      try {
+        return await actor.getAlumniContent();
+      } catch (error: any) {
+        if (error.message?.includes('No Alumni content found')) {
+          return null;
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !isFetching,
     staleTime: 0,
@@ -1250,16 +1149,8 @@ export function useUpdateAlumniContent() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateAlumniContent(title, description, communityEngagement);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumniContent'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['alumniContent'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Alumni content update error:', error);
-      throw error;
     },
   });
 }
@@ -1300,16 +1191,8 @@ export function useCreateAlumniProfile() {
       if (!actor) throw new Error('Actor not available');
       await actor.createAlumniProfile(name, graduationYear, achievements, currentPosition);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumniProfiles'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['alumniProfiles'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Alumni profile create error:', error);
-      throw error;
     },
   });
 }
@@ -1335,16 +1218,8 @@ export function useUpdateAlumniProfile() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateAlumniProfile(id, name, graduationYear, achievements, currentPosition);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumniProfiles'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['alumniProfiles'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Alumni profile update error:', error);
-      throw error;
     },
   });
 }
@@ -1358,16 +1233,8 @@ export function useDeleteAlumniProfile() {
       if (!actor) throw new Error('Actor not available');
       await actor.deleteAlumniProfile(id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumniProfiles'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['alumniProfiles'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Alumni profile delete error:', error);
-      throw error;
     },
   });
 }
@@ -1382,7 +1249,7 @@ export function useGetBNHSHymnVideo() {
       try {
         return await actor.getBNHSHymnVideo();
       } catch (error: any) {
-        if (error.message?.includes('not found')) {
+        if (error.message?.includes('BNHS Hymn video not found')) {
           return null;
         }
         throw error;
@@ -1397,45 +1264,14 @@ export function useGetBNHSHymnVideo() {
   });
 }
 
-export function useUploadBNHSHymnVideo() {
+export function useSetBNHSHymn() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (videoFile: ExternalBlob) => {
       if (!actor) throw new Error('Actor not available');
-      
-      try {
-        await actor.setBNHSHymn(videoFile);
-        return { success: true };
-      } catch (error: any) {
-        console.error('Backend upload error:', error);
-        throw new Error(error.message || 'Failed to upload video to backend');
-      }
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['bnhsHymnVideo'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      await queryClient.refetchQueries({ queryKey: ['bnhsHymnVideo'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('BNHS Hymn video upload error:', error);
-      throw error;
-    },
-    retry: 1,
-  });
-}
-
-export function useRemoveBNHSHymnVideo() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.removeBNHSHymn();
+      await actor.setBNHSHymn(videoFile);
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['bnhsHymnVideo'] });
@@ -1445,13 +1281,27 @@ export function useRemoveBNHSHymnVideo() {
       await queryClient.refetchQueries({ queryKey: ['bnhsHymnVideo'], type: 'active' });
     },
     onError: (error: any) => {
-      console.error('BNHS Hymn video remove error:', error);
+      console.error('BNHS Hymn update error:', error);
       throw error;
     },
   });
 }
 
-// DepEd Mission Content
+export function useRemoveBNHSHymn() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.removeBNHSHymn();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bnhsHymnVideo'] });
+    },
+  });
+}
+
 export function useGetDepEdMission() {
   const { actor, isFetching } = useActor();
 
@@ -1462,7 +1312,7 @@ export function useGetDepEdMission() {
       try {
         return await actor.getDepEdMission();
       } catch (error: any) {
-        if (error.message?.includes('not found')) {
+        if (error.message?.includes('DepEd Mission content not found')) {
           return null;
         }
         throw error;
@@ -1477,4 +1327,111 @@ export function useGetDepEdMission() {
   });
 }
 
-export type { BannerImage, BannerFileMetadata, SliderImage, HeritageSectionContent, FormattedText, CitizenCharterBackground, CitizenCharterStaticImage, AlumniContent, AlumniProfile, AdminUserData, AdminPermission, UserProfile, AnalyticsPeriod, LoginRecord, StorageStats, FileTypeBreakdown, ContactInfoSection, OfficeHoursSection, SchoolHoursSection, DepEdMissionContent, OrganizationalStructureContent };
+export function useGetOrganizationalStructure() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<OrganizationalStructureContent>({
+    queryKey: ['organizationalStructure'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getOrganizationalStructure();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useUpdateOrgStructureTitleBackground() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (titleBackground: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setOrganizationalStructureTitleBackground(titleBackground);
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
+    },
+    onError: (error: any) => {
+      console.error('Org structure title background update error:', error);
+      throw error;
+    },
+  });
+}
+
+export function useUpdateOrgStructureStaticImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (staticImage: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setOrganizationalStructureStaticImage(staticImage);
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
+    },
+    onError: (error: any) => {
+      console.error('Org structure static image update error:', error);
+      throw error;
+    },
+  });
+}
+
+export function useRemoveOrgStructureTitleBackground() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.removeOrganizationalStructureTitleBackground();
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
+    },
+    onError: (error: any) => {
+      console.error('Org structure title background removal error:', error);
+      throw error;
+    },
+  });
+}
+
+export function useRemoveOrgStructureStaticImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.removeOrganizationalStructureStaticImage();
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
+    },
+    onError: (error: any) => {
+      console.error('Org structure static image removal error:', error);
+      throw error;
+    },
+  });
+}

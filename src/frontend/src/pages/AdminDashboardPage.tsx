@@ -1,17 +1,63 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
-import { useGetCallerRole, useGetCallerPermissions } from '@/hooks/useQueries';
+import { useGetCallerRole, useGetCallerPermissions, useRecoverSuperAdmin, useInitializeAdminSession } from '@/hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Image, Images, ArrowLeft, AlertCircle, BookOpen, MapPin, GraduationCap, Video, Users, BarChart3, HardDrive, Building2 } from 'lucide-react';
+import { Image, Images, ArrowLeft, AlertCircle, BookOpen, MapPin, GraduationCap, Video, Users, BarChart3, HardDrive, Building2, Copy, Check, ShieldAlert } from 'lucide-react';
 import { AdminPermission } from '@/backend';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
-  const { data: role, isLoading: roleLoading, isError: roleError } = useGetCallerRole();
-  const { data: permissions, isLoading: permissionsLoading } = useGetCallerPermissions();
+  const { data: role, isLoading: roleLoading, isError: roleError, refetch: refetchRole } = useGetCallerRole();
+  const { data: permissions, isLoading: permissionsLoading, refetch: refetchPermissions } = useGetCallerPermissions();
+  const recoverSuperAdminMutation = useRecoverSuperAdmin();
+  const initializeSessionMutation = useInitializeAdminSession();
+  
+  const [copied, setCopied] = useState(false);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
+
+  const principalId = identity?.getPrincipal().toString() || '';
+
+  // Initialize session once when identity is available
+  useEffect(() => {
+    if (identity && !sessionInitialized && !roleLoading) {
+      initializeSessionMutation.mutate(undefined, {
+        onSuccess: () => {
+          setSessionInitialized(true);
+        },
+        onError: (error: any) => {
+          console.error('Session initialization error:', error);
+        },
+      });
+    }
+  }, [identity, sessionInitialized, roleLoading]);
+
+  const handleCopyPrincipal = async () => {
+    try {
+      await navigator.clipboard.writeText(principalId);
+      setCopied(true);
+      toast.success('Principal ID copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy Principal ID');
+    }
+  };
+
+  const handleRecoverSuperAdmin = async () => {
+    try {
+      const message = await recoverSuperAdminMutation.mutateAsync();
+      toast.success(message);
+      await refetchRole();
+      await refetchPermissions();
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to recover Super Admin access';
+      toast.error(errorMessage);
+    }
+  };
 
   if (!identity) {
     return (
@@ -40,7 +86,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Display role with fallback
   const displayRole = roleError ? 'Unknown' : (role || 'Unknown');
   const isSuperAdmin = role === 'SuperAdmin';
   const hasPermission = (permission: AdminPermission) => {
@@ -65,6 +110,76 @@ export default function AdminDashboardPage() {
             </p>
           </div>
         </div>
+
+        {/* Principal ID Display Section */}
+        <Card className="mb-6 max-w-4xl mx-auto border-school-gold/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-school-blue flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Your Principal ID
+            </CardTitle>
+            <CardDescription>
+              This is your unique Internet Identity principal. Copy it to recover Super Admin access if needed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+              <code className="flex-1 text-sm font-mono break-all">{principalId}</code>
+              <Button
+                onClick={handleCopyPrincipal}
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Super Admin Recovery Section - Only show if not SuperAdmin */}
+        {!isSuperAdmin && (
+          <Card className="mb-6 max-w-4xl mx-auto border-orange-500/20 shadow-lg bg-orange-50/50">
+            <CardHeader>
+              <CardTitle className="text-orange-700 flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5" />
+                Super Admin Recovery
+              </CardTitle>
+              <CardDescription>
+                If you are the registered Super Admin but your role shows as "{displayRole}", click the button below to recover your Super Admin access.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={handleRecoverSuperAdmin}
+                disabled={recoverSuperAdminMutation.isPending}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {recoverSuperAdminMutation.isPending ? (
+                  'Recovering...'
+                ) : (
+                  <>
+                    <ShieldAlert className="h-4 w-4 mr-2" />
+                    Recover Super Admin Access
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3">
+                Note: This will only work if your Principal ID matches the registered Super Admin. If another user is already set as Super Admin, you will receive an error message.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {/* User Management Card - Super Admin Only */}

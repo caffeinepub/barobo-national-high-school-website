@@ -2,9 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-existing-principal-photo-used-on-the-home-page-with-the-user-s-newly-uploaded-principal-image-ensuring-the-final-asset-is-a-clean-sharp-perfectly-square-1-1-600-600-png-centered-on-the-face-horizontally-with-slight-natural-headroom-framed-head-and-shoulders-and-cropped-slightly-above-the-elbows-and-saved-as-frontend-public-assets-generated-principal-photo-dim-600x600-png",
-      "featureTitle": "Replace the existing principal photo used on the Home page with the user’s newly uploaded principal image, ensuring the final asset is a clean, sharp, perfectly square (1:1) 600×600 PNG, centered on the face horizontally with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows, and saved as frontend/public/assets/generated/principal-photo.dim_600x600.png.",
-      "files": [],
+      "featureId": "feature-update-the-admin-dashboard-ui-frontend-src-pages-admindashboardpage-tsx-to-always-show-the-currently-logged-in-principal-id-from-the-internet-identity-identity-object-with-a-copy-to-clipboard-control-so-the-user-can-reliably-identify-their-principal-even-if-backend-role-permissions-are-temporarily-unknown",
+      "featureTitle": "Update the Admin Dashboard UI (frontend/src/pages/AdminDashboardPage.tsx) to always show the currently logged-in Principal ID (from the Internet Identity identity object) with a copy-to-clipboard control, so the user can reliably identify their Principal even if backend role/permissions are temporarily \"Unknown\".",
+      "files": [
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
       "components": [
         "blob-storage@4.0.0",
         "authorization@4.0.0",
@@ -16,7 +18,51 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-13"
+        "REQ-16"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-super-admin-recovery-section-on-the-admin-dashboard-that-provides-an-alternate-way-to-regain-access-by-triggering-the-new-backend-recovery-initialization-api-and-clearly-communicating-outcomes-in-english-success-error-show-this-section-only-when-the-user-is-logged-in-but-does-not-currently-have-super-admin-access",
+      "featureTitle": "Add a \"Super Admin Recovery\" section on the Admin Dashboard that provides an alternate way to regain access by triggering the new backend recovery/initialization API and clearly communicating outcomes in English (success/error). Show this section only when the user is logged in but does not currently have Super Admin access.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-17"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-make-the-post-login-admin-experience-reliably-resolve-the-correct-role-by-ensuring-a-role-initializing-shared-call-is-executed-after-a-successful-internet-identity-login-so-the-system-does-not-remain-stuck-showing-role-unknown-guest-due-to-only-query-calls-being-made",
+      "featureTitle": "Make the post-login admin experience reliably resolve the correct role by ensuring a role-initializing shared call is executed after a successful Internet Identity login (so the system does not remain stuck showing role \"Unknown\"/\"Guest\" due to only query calls being made).",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-18"
       ],
       "confidence": "high"
     }

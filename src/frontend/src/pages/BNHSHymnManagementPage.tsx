@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Loader2, Video } from 'lucide-react';
-import { useGetBNHSHymnVideo, useUploadBNHSHymnVideo, useRemoveBNHSHymnVideo } from '@/hooks/useQueries';
+import { useGetBNHSHymnVideo, useSetBNHSHymn, useRemoveBNHSHymn } from '@/hooks/useQueries';
 import { ExternalBlob } from '@/backend';
 import { convertToDirectImageUrl, detectCloudProvider, getProviderName } from '@/lib/urlConverter';
 import { validateProxiedImageUrl } from '@/lib/imageProxy';
@@ -17,8 +17,8 @@ export default function BNHSHymnManagementPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: currentVideo, isLoading: videoLoading } = useGetBNHSHymnVideo();
-  const uploadVideoMutation = useUploadBNHSHymnVideo();
-  const removeVideoMutation = useRemoveBNHSHymnVideo();
+  const uploadVideoMutation = useSetBNHSHymn();
+  const removeVideoMutation = useRemoveBNHSHymn();
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');

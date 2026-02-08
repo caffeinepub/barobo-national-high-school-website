@@ -410,10 +410,12 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVisitorAnalytics(): Promise<AnalyticsPeriod>;
     initializeResources(): Promise<void>;
+    initializeSuperAdmin(): Promise<Principal>;
     isCallerAdmin(): Promise<boolean>;
     proxyPublicImage(imageUrl: string, extraHeaders: Array<Header>): Promise<string>;
     recordLogin(): Promise<void>;
     recordVisitor(sessionId: string): Promise<void>;
+    recoverSuperAdmin(): Promise<string>;
     removeBNHSHymn(): Promise<void>;
     removeCitizenCharterBackgroundImage(): Promise<void>;
     removeCitizenCharterStaticImage(): Promise<void>;
@@ -1544,6 +1546,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async initializeSuperAdmin(): Promise<Principal> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.initializeSuperAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.initializeSuperAdmin();
+            return result;
+        }
+    }
     async isCallerAdmin(): Promise<boolean> {
         if (this.processError) {
             try {
@@ -1597,6 +1613,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.recordVisitor(arg0);
+            return result;
+        }
+    }
+    async recoverSuperAdmin(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recoverSuperAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recoverSuperAdmin();
             return result;
         }
     }

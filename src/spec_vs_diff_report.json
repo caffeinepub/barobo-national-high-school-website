@@ -1,29 +1,87 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T07:19:21.160Z",
-  "summary": "The diff only modifies project_state.json metadata and does not show the required principal photo asset replacement or any Home page reference updates. It also describes additional admin-panel editability that is explicitly a non-goal.",
+  "generatedAt": "2026-02-08T15:10:08.297Z",
+  "summary": "Backend adds initializeSuperAdmin/recoverSuperAdmin logic but does not show any stable persistence across upgrades, and the frontend wiring only calls recoverSuperAdmin (which cannot initialize an uninitialized canister). Admin dashboard adds principal-id/copy and session-init logic, but key UI requirements are not fully verifiable from the truncated diff. Several unrelated frontend feature changes appear in the diff.",
   "missing_requirements": [
     {
-      "id": "REQ-13",
-      "requirement": "Replace the existing principal photo used on the Home page with the newly uploaded principal image, processed as a clean 600×600 square PNG, saved at frontend/public/assets/generated/principal-photo.dim_600x600.png, and continue displaying via /assets/generated/principal-photo.dim_600x600.png with no layout regressions.",
-      "reason": "No diff evidence shows the principal image asset being updated/added at the required path, nor any Home page usage/reference being confirmed. The only modified file is project_state.json.",
+      "id": "REQ-14",
+      "requirement": "Persist Super Admin identity and initialization state across canister upgrades so Super Admin access does not get lost after rebuilds/updates.",
+      "reason": "Diff shows superAdminPrincipal and isInitialized as regular vars, but no evidence of stable variables or preupgrade/postupgrade hooks to persist/restore them across upgrades.",
       "evidence": [
-        "project_state.json"
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "requirement": "Provide a deterministic, authenticated Super Admin recovery/initialization API that sets the caller as Super Admin on an uninitialized canister (non-anonymous), and denies changes when already initialized by a different principal.",
+      "reason": "Backend initializeSuperAdmin can initialize, but the frontend recovery flow only calls actor.recoverSuperAdmin(), which traps when not initialized (\"Use initializeSuperAdmin first\"), so the required 'regain access on an uninitialized canister via the recovery/initialization API' is not implemented end-to-end.",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "requirement": "Admin Dashboard always shows the currently logged-in Principal ID with a copy-to-clipboard control and success indication, regardless of role query errors/Unknown.",
+      "reason": "Diff shows principalId derivation and copy handler with toast success/error, but the JSX that renders the \"Principal ID\" line and copy control is not present in the provided truncated excerpt, so implementation of the always-visible UI element cannot be confirmed from the diff summary.",
+      "evidence": [
+        "frontend/src/pages/AdminDashboardPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "requirement": "Add a \"Super Admin Recovery\" section on the Admin Dashboard, shown only when logged in but not Super Admin, that triggers the backend recovery/initialization API and communicates outcomes in English.",
+      "reason": "Diff shows a recoverSuperAdmin mutation and handler, but does not show the actual conditional \"Super Admin Recovery\" section rendering (only-when-not-super-admin) in the truncated JSX. Additionally, the wired call is recoverSuperAdmin (confirm-only) and does not initialize an uninitialized canister, which is part of the required recovery/initialization flow.",
+      "evidence": [
+        "frontend/src/pages/AdminDashboardPage.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "requirement": "Ensure a role-initializing shared call is executed after successful Internet Identity login so the correct role reliably resolves (not stuck Unknown/Guest).",
+      "reason": "Diff adds useInitializeAdminSession calling actor.recordLogin and triggers it in AdminDashboard when identity is available, but there is no evidence of integration with the Header \"Admin Login\" flow specifically, and the useInitializeAdminSession implementation is truncated before showing any role-refresh behavior beyond calling recordLogin.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminDashboardPage.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Admin panel functionality to make the Principal section content (photo/name/position/message) and Faculty/Staff group photo editable.",
-      "reason": "The BuildRequest explicitly lists creating new admin-panel functionality for uploading/changing the principal image as a non-goal; however the diff summary text claims such editability is included.",
+      "description": "Auto-save and URL validation workflow changes for BNHS Hymn video management (debounced validation, auto-save timer, new toasts/messages).",
+      "reason": "Not requested by REQ-14 through REQ-18; unrelated to Super Admin persistence/recovery or Admin Dashboard role/principal display requirements.",
       "evidence": [
-        "project_state.json"
+        "frontend/src/pages/BNHSHymnManagementPage.tsx"
+      ]
+    },
+    {
+      "description": "Expanded Citizen Charter management page changes (additional CRUD sections for contact info/office hours/school hours, tabs, validations).",
+      "reason": "Not requested by REQ-14 through REQ-18; unrelated to Super Admin recovery/persistence or Admin Dashboard changes.",
+      "evidence": [
+        "frontend/src/pages/CitizenCharterManagementPage.tsx"
+      ]
+    },
+    {
+      "description": "Public Citizen Charter page layout/content changes (dynamic sections with fallback defaults, card UI changes).",
+      "reason": "Not requested by REQ-14 through REQ-18; unrelated to admin recovery/init flow.",
+      "evidence": [
+        "frontend/src/pages/CitizenCharterPage.tsx"
       ]
     }
   ],
-  "confidence": 0.84,
+  "confidence": 0.73,
   "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/AdminDashboardPage.tsx",
+    "frontend/src/pages/BNHSHymnManagementPage.tsx",
+    "frontend/src/pages/CitizenCharterManagementPage.tsx",
+    "frontend/src/pages/CitizenCharterPage.tsx",
     "project_state.json"
   ]
 }
