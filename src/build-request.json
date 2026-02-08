@@ -1,52 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Add Barobo, Caraga weather forecast below Philippine Standard Time on Home page",
+  "title": "Fix Facebook embedded posts not appearing on desktop view",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Add a weather forecast section for “Barobo, Caraga” on the Home page (frontend/src/pages/HomePage.tsx) positioned directly below the Philippine Standard Time display (the <PhilippineTimeClock /> area).",
+      "id": "REQ-6",
+      "text": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "In the home page below the Philippine Standard Time can you place the weather forecast in-Barobo, Caraga"
+          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
         ]
       },
       "acceptanceCriteria": [
-        "On the Home page, a weather forecast block is visible immediately under the Philippine Standard Time line on both mobile and desktop layouts.",
-        "The location label is shown in English as “Barobo, Caraga”."
+        "On desktop/tablet viewport widths (>= 768px), the Facebook presence area displays the embedded timeline/posts (not just an empty container).",
+        "On mobile viewport widths (< 768px), the Facebook embed continues to work as it does today.",
+        "The Facebook presence block continues to target the exact page URL: https://www.facebook.com/BaroboNationalHighSchool."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Implement client-side fetching of the Barobo, Caraga forecast using React Query, including loading and error states, and display a concise forecast summary (at minimum: current conditions and a multi-day forecast).",
+      "id": "REQ-7",
+      "text": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "...place the weather forecast in-Barobo, Caraga"
+          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
         ]
       },
       "acceptanceCriteria": [
-        "Weather data is fetched asynchronously via React Query and does not block initial page render.",
-        "While fetching, the weather section shows a clear loading state.",
-        "If the fetch fails, the weather section shows a clear error state and does not break the rest of the Home page.",
-        "The weather section displays current conditions (e.g., temperature + condition) and at least a 3-day forecast (date/day + high/low and condition)."
+        "If the embed loads successfully, the fallback (Facebook icon/link) is not shown.",
+        "If the embed fails to load (simulate by blocking facebook.com or the plugin URL), the fallback is shown within a reasonable time (<= 10 seconds) and links open in a new tab.",
+        "No reliance on fragile DOM queries (e.g., querying for a nested iframe that may not exist until after parsing) causes false negatives in desktop view."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "yes, but in the desktop, mode doesn't appear the post only in the mobile phone will appear."
+        ]
+      },
+      "acceptanceCriteria": [
+        "On md+ viewports, the Facebook embed area is constrained to the same overall height as the weather section (as currently intended via maxHeight).",
+        "On small screens, the Facebook block stacks below the weather section and is not artificially height-constrained.",
+        "No changes are introduced to unrelated sections (e.g., School Activities, DepEd section, footer/header) or to global Tailwind theme variables."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (read-only).",
-    "Do not modify immutable hook files (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx)."
+    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Keep the Facebook page URL exactly as: https://www.facebook.com/BaroboNationalHighSchool.",
+    "Do not change other Home page sections or global styling when fixing the desktop Facebook embed rendering."
   ],
   "nonGoals": [
-    "Do not add user-selectable locations or a full weather settings page.",
-    "Do not implement real-time weather updates via websockets or push notifications."
+    "Adding new social platforms or social media API integrations beyond the existing Facebook presence block.",
+    "Backend changes (Motoko) or new backend endpoints for Facebook content.",
+    "Real-time updates or notifications for Facebook posts."
   ],
   "imageRequirements": {
     "required": [],

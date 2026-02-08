@@ -1,47 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Home page Barobo, Caraga weather forecast section (React Query)",
+  "title": "Fix desktop Facebook Page embed rendering and deterministic fallback on Home page",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add a Barobo, Caraga weather forecast block directly below the Philippine Standard Time display on the Home page.",
+      "id": "REQ-6",
+      "summary": "Update the Home page Facebook presence block so the Barobo National High School Facebook Page timeline reliably renders on desktop/tablet while preserving mobile behavior.",
       "acceptanceCriteria": [
-        "On the Home page, a weather forecast block is visible immediately under the Philippine Standard Time line on both mobile and desktop layouts.",
-        "The location label is shown in English as “Barobo, Caraga”."
+        "On desktop/tablet viewport widths (>= 768px), the Facebook presence area displays the embedded timeline/posts (not just an empty container).",
+        "On mobile viewport widths (< 768px), the Facebook embed continues to work as it does today.",
+        "The Facebook presence block continues to target the exact page URL: https://www.facebook.com/BaroboNationalHighSchool."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/WeatherForecastSection.tsx",
-          "operation": "create",
-          "description": "Create a reusable WeatherForecastSection component that renders the location label “Barobo, Caraga” and displays current conditions plus a multi-day forecast with responsive Tailwind layout. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
+          "operation": "modify",
+          "description": "Replace the current XFBML-based embed with a more reliable desktop-friendly Facebook Page Plugin iframe approach that targets exactly https://www.facebook.com/BaroboNationalHighSchool, and make the embed responsive (derive plugin width from the rendered container) so it renders consistently on md+ viewports."
         },
         {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Wire WeatherForecastSection into the Home page directly below the <PhilippineTimeClock /> area, ensuring it sits immediately under the Philippine Standard Time line on both mobile and desktop layouts."
+          "path": "frontend/src/lib/facebookPagePlugin.ts",
+          "operation": "create",
+          "description": "Add a small helper to build the Facebook Page Plugin iframe URL deterministically from inputs (pageUrl, tabs, width, height) while ensuring the pageUrl stays exactly https://www.facebook.com/BaroboNationalHighSchool when used by the Home page Facebook presence block."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Fetch and render Barobo, Caraga weather data client-side with React Query, including loading/error states and at least a 3-day forecast.",
+      "id": "REQ-7",
+      "summary": "Make Facebook embed loading and failure detection deterministic so fallback only shows on genuine failure and never due to fragile DOM checks.",
       "acceptanceCriteria": [
-        "Weather data is fetched asynchronously via React Query and does not block initial page render.",
-        "While fetching, the weather section shows a clear loading state.",
-        "If the fetch fails, the weather section shows a clear error state and does not break the rest of the Home page.",
-        "The weather section displays current conditions (e.g., temperature + condition) and at least a 3-day forecast (date/day + high/low and condition)."
+        "If the embed loads successfully, the fallback (Facebook icon/link) is not shown.",
+        "If the embed fails to load (simulate by blocking facebook.com or the plugin URL), the fallback is shown within a reasonable time (<= 10 seconds) and links open in a new tab.",
+        "No reliance on fragile DOM queries (e.g., querying for a nested iframe that may not exist until after parsing) causes false negatives in desktop view."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useBaroboWeather.ts",
-          "operation": "create",
-          "description": "Implement a dedicated React Query hook that client-side fetches Barobo, Caraga weather data (e.g., via a public forecast API such as Open-Meteo using Barobo coordinates), parses it into a UI-friendly shape (current conditions + at least 3 days), and exposes query state for loading/error handling."
+          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
+          "operation": "modify",
+          "description": "Implement deterministic embed state handling using iframe events and a bounded timeout (<=10s): show a loading state initially, mark success on iframe load, mark failure on iframe error/timeout, and only render the fallback link when failure is confirmed; remove fragile document.querySelector-based checks."
         },
         {
-          "path": "frontend/src/components/WeatherForecastSection.tsx",
+          "path": "frontend/src/pages/HomePage.tsx",
           "operation": "modify",
-          "description": "Connect WeatherForecastSection to useBaroboWeather and render: (1) a non-blocking loading UI while the query is in-flight, (2) a resilient error UI on failure, and (3) current conditions plus at least a 3-day forecast summary on success. Verify the component's usage instructions before implementing."
+          "description": "Remove/avoid reliance on the Facebook SDK script injection/XFBML parsing for the Home page Facebook block so the embed's load/failure behavior is controlled entirely by the FacebookPresenceBlock implementation (prevent desktop false negatives triggered by SDK timing/parsing)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Preserve the existing Home page two-column layout and height-matching behavior between Weather Forecast and the Facebook block on md+ without affecting other sections or global styling.",
+      "acceptanceCriteria": [
+        "On md+ viewports, the Facebook embed area is constrained to the same overall height as the weather section (as currently intended via maxHeight).",
+        "On small screens, the Facebook block stacks below the weather section and is not artificially height-constrained.",
+        "No changes are introduced to unrelated sections (e.g., School Activities, DepEd section, footer/header) or to global Tailwind theme variables."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FacebookPresenceBlock.tsx",
+          "operation": "modify",
+          "description": "Keep the existing maxHeight-driven height constraint behavior for md+ by applying the outer container height only when maxHeight is provided, and ensure the internal embed viewport accounts for header spacing while allowing natural sizing when maxHeight is undefined (mobile)."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Preserve the current grid layout and weather-height measurement behavior; keep passing measured weatherHeight as maxHeight only on md+ viewports and avoid any layout/global styling changes outside the existing Weather + Facebook two-column section."
         }
       ]
     }

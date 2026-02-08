@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useActor } from '../hooks/useActor';
 import PhilippineTimeClock from '../components/PhilippineTimeClock';
 import WeatherForecastSection from '../components/WeatherForecastSection';
+import FacebookPresenceBlock from '../components/FacebookPresenceBlock';
 import SchoolActivitiesSlider from '../components/SchoolActivitiesSlider';
 import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2 } from 'lucide-react';
 import { useGetBNHSHymnVideo } from '../hooks/useQueries';
@@ -12,6 +13,8 @@ export default function HomePage() {
   const { data: hymnVideo, isLoading: hymnLoading } = useGetBNHSHymnVideo();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
+  const weatherRef = useRef<HTMLDivElement>(null);
+  const [weatherHeight, setWeatherHeight] = useState<number | undefined>(undefined);
 
   const { data: totalVisitors } = useQuery({
     queryKey: ['totalVisitors'],
@@ -67,6 +70,39 @@ export default function HomePage() {
     };
     recordVisit();
   }, [actor]);
+
+  // Measure weather section height on md+ viewports
+  useEffect(() => {
+    if (!weatherRef.current) return;
+
+    const updateHeight = () => {
+      // Only apply height constraint on md+ viewports (768px+)
+      if (window.innerWidth >= 768 && weatherRef.current) {
+        const height = weatherRef.current.offsetHeight;
+        setWeatherHeight(height);
+      } else {
+        setWeatherHeight(undefined);
+      }
+    };
+
+    // Initial measurement
+    updateHeight();
+
+    // Use ResizeObserver to track changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeight();
+    });
+
+    resizeObserver.observe(weatherRef.current);
+
+    // Also listen to window resize for viewport changes
+    window.addEventListener('resize', updateHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
   // Delayed autoplay effect for BNHS Hymn video
   useEffect(() => {
@@ -149,9 +185,14 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Weather Forecast Section - directly below Philippine Standard Time */}
-        <div className="mb-8">
-          <WeatherForecastSection />
+        {/* Weather Forecast and Facebook Section - side by side on md+ */}
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div ref={weatherRef}>
+            <WeatherForecastSection />
+          </div>
+          <div>
+            <FacebookPresenceBlock maxHeight={weatherHeight} />
+          </div>
         </div>
 
         <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Activities</h2>
@@ -298,72 +339,85 @@ export default function HomePage() {
               <span className="text-lg font-semibold">Citizen Charter</span>
             </a>
             <a
-              href="/resources/learning-materials"
+              href="/academics/learning-curriculum"
               className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
             >
               <GraduationCap className="h-10 w-10" />
-              <span className="text-lg font-semibold">Learning Resources</span>
+              <span className="text-lg font-semibold">Curriculum</span>
             </a>
             <a
-              href="/others/downloadable-forms"
+              href="/resources/downloadable-forms"
               className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
             >
               <Download className="h-10 w-10" />
-              <span className="text-lg font-semibold">Downloadable Forms</span>
+              <span className="text-lg font-semibold">Forms</span>
             </a>
           </div>
         </section>
 
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
-          <div className="mx-auto max-w-3xl">
-            {hymnLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-[#800000]" />
+          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Calendar</h2>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
+                <span className="text-lg font-bold">01</span>
               </div>
-            ) : hymnVideo ? (
-              <video
-                ref={videoRef}
-                controls
-                playsInline
-                className="w-full rounded-lg shadow-lg"
-                style={{ maxHeight: '500px', objectFit: 'contain' }}
-                key={hymnVideo.getDirectURL()}
-              >
-                <source src={hymnVideo.getDirectURL()} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            ) : (
-              <div className="rounded-lg bg-gray-100 p-12 text-center">
-                <p className="text-gray-600">
-                  No BNHS Hymn video available yet. Please check back later.
-                </p>
+              <div>
+                <h3 className="font-semibold text-gray-900">First Quarter</h3>
+                <p className="text-sm text-gray-600">August - October</p>
               </div>
-            )}
+            </div>
+            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
+                <span className="text-lg font-bold">02</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Second Quarter</h3>
+                <p className="text-sm text-gray-600">November - December</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
+                <span className="text-lg font-bold">03</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Third Quarter</h3>
+                <p className="text-sm text-gray-600">January - March</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#800000] text-white">
+                <span className="text-lg font-bold">04</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Fourth Quarter</h3>
+                <p className="text-sm text-gray-600">April - June</p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Calendar</h2>
-          <div className="space-y-4">
-            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
-              <h3 className="font-semibold text-[#800000]">Opening of Classes</h3>
-              <p className="text-gray-600">August 29, 2024</p>
+        {hymnVideo && (
+          <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
+            <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
+            <div className="mx-auto max-w-3xl">
+              {hymnLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#800000]" />
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  controls
+                  className="w-full rounded-lg shadow-lg"
+                  src={hymnVideo.getDirectURL()}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
-            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
-              <h3 className="font-semibold text-[#800000]">First Quarter Examination</h3>
-              <p className="text-gray-600">October 14-18, 2024</p>
-            </div>
-            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
-              <h3 className="font-semibold text-[#800000]">Christmas Break</h3>
-              <p className="text-gray-600">December 21, 2024 - January 5, 2025</p>
-            </div>
-            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
-              <h3 className="font-semibold text-[#800000]">End of School Year</h3>
-              <p className="text-gray-600">June 13, 2025</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </div>
   );

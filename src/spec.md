@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Show a Barobo, Caraga weather forecast on the Home page directly below the Philippine Standard Time display.
+**Goal:** Ensure the Home page Facebook presence block reliably renders the embedded Facebook Page timeline/posts on desktop/tablet while keeping current mobile behavior and the existing two-column, height-matching layout.
 
 **Planned changes:**
-- Add a weather forecast block to `frontend/src/pages/HomePage.tsx` positioned immediately under the `<PhilippineTimeClock />` area, with the location label “Barobo, Caraga”.
-- Fetch forecast data client-side using React Query, ensuring the Home page renders without waiting for the request.
-- Implement clear loading and error states for the weather block.
-- Display a concise weather view including current conditions and at least a 3-day forecast (day/date plus high/low and condition).
+- Update the Home page Facebook embed implementation to render reliably on desktop/tablet viewports (>= 768px) while continuing to work on mobile (< 768px).
+- Make embed load vs. failure detection deterministic so the fallback link only appears when the embed genuinely fails (e.g., blocked network/privacy/embed error), without false triggers on desktop.
+- Preserve the current md+ two-column layout and keep the Facebook block height constrained to match the rendered height of the Weather Forecast section; keep small-screen stacking without artificial height constraints.
 
-**User-visible outcome:** Visitors to the Home page see “Barobo, Caraga” weather immediately beneath the Philippine Standard Time, with current conditions and a multi-day forecast, including visible loading and error states when applicable.
+**User-visible outcome:** On desktop/tablet, visitors can see the school’s embedded Facebook Page timeline/posts (instead of an empty area), with the fallback link only appearing when the embed truly cannot load, and the Home page layout/section heights remain as intended.

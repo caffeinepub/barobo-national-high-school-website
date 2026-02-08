@@ -1,12 +1,13 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "New project",
+  "projectStateVersion": 9,
+  "summary": "Home page enhancements including Barobo, Caraga weather forecast and an added Facebook presence (embedded feed or icon link) alongside the forecast.",
   "architectural_notes": [
     "Role/permission state may load before backend role initialization completes; ensure role is resolved deterministically on login (avoid transient 'Unknown'/'User')."
   ],
   "known_issues": [
-    "Login role is inconsistent (sometimes 'Unknown' or 'User') and can lead to 'You don't have any permissions assigned yet' despite being intended as Super Admin."
+    "Login role is inconsistent (sometimes 'Unknown' or 'User') and can lead to 'You don't have any permissions assigned yet' despite being intended as Super Admin.",
+    "Facebook embedded Page feed/posts do not appear in desktop view (posts only show on mobile)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -25,6 +26,54 @@
         "REQ-2"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-home-page-frontend-src-pages-homepage-tsx-so-the-area-directly-below-the-philippine-standard-time-clock-displays-a-two-column-layout-on-desktop-tablet-the-existing-weather-forecast-barobo-caraga-section-on-the-left-and-a-facebook-presence-block-on-the-right-for-https-www-facebook-com-barobonationalhighschool-on-small-screens-stack-the-facebook-block-below-the-weather-section",
+      "title": "Update the Home page (frontend/src/pages/HomePage.tsx) so the area directly below the Philippine Standard Time clock displays a two-column layout on desktop/tablet: the existing “Weather Forecast - Barobo, Caraga” section on the left and a Facebook presence block on the right for https://www.facebook.com/BaroboNationalHighSchool. On small screens, stack the Facebook block below the weather section.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-facebook-presence-block-to-prefer-an-embedded-facebook-page-feed-showing-posts-updates-for-https-www-facebook-com-barobonationalhighschool-and-provide-a-graceful-fallback-to-a-clickable-facebook-icon-link-that-opens-the-page-in-a-new-tab-if-embedding-is-unavailable-e-g-blocked-by-browser-privacy-settings-or-fails-to-load",
+      "title": "Implement the Facebook presence block to prefer an embedded Facebook Page feed (showing posts/updates) for https://www.facebook.com/BaroboNationalHighSchool, and provide a graceful fallback to a clickable Facebook icon/link that opens the page in a new tab if embedding is unavailable (e.g., blocked by browser/privacy settings) or fails to load.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-home-page-two-column-layout-weather-forecast-barobo-caraga-on-the-left-facebook-presence-embed-on-the-right-reduce-limit-the-embedded-facebook-page-feed-height-so-the-right-side-facebook-block-matches-the-rendered-height-of-the-weather-forecast-section-without-changing-other-page-sections-or-global-styling",
+      "title": "On the Home page two-column layout (Weather Forecast - Barobo, Caraga on the left; Facebook presence embed on the right), reduce/limit the embedded Facebook Page feed height so the right-side Facebook block matches the rendered height of the Weather Forecast section, without changing other page sections or global styling.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-home-page-facebook-presence-block-so-the-embedded-facebook-page-timeline-posts-reliably-render-on-desktop-tablet-not-only-on-mobile-for-https-www-facebook-com-barobonationalhighschool",
+      "title": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-facebook-embed-loading-failure-detection-accurate-and-deterministic-so-the-fallback-link-only-appears-when-the-embed-genuinely-cannot-load-e-g-blocked-by-privacy-settings-network-failure-or-embed-error-and-does-not-incorrectly-trigger-on-desktop",
+      "title": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-preserve-the-existing-homepage-two-column-layout-and-the-height-matching-behavior-on-md-viewports-the-right-column-facebook-block-height-must-continue-to-match-the-rendered-height-of-the-left-column-weather-forecast-section-without-affecting-other-home-page-sections-or-global-styling",
+      "title": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -37,6 +86,18 @@
     {
       "id": "AR-2",
       "summary": "Permanently assign/lock the correct Internet Identity as Super Admin so role and permissions are consistent immediately on login",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add Barobo National High School Facebook presence on the Home page to the right of the Barobo, Caraga weather forecast (embedded feed showing posts/updates or a clickable Facebook icon/link to https://www.facebook.com/BaroboNationalHighSchool)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Reduce the height of the embedded Facebook feed on the Home page so it matches the height of the “Weather Forecast - Barobo, Caraga” section (right column) without impacting other parts of the system",
       "reqIds": [],
       "status": "pending"
     }
