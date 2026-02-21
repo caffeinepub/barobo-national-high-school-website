@@ -1,144 +1,26 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 17,
-  "summary": "Home page enhancements now also include making the Principal section content (photo/name/position/message) and the Faculty/Staff group photo editable via the admin panel, plus updating the principal photo to a clean 600×600 square-cropped image.",
+  "projectStateVersion": 3,
+  "summary": "Project to add admin-editable content controls for specific website sections and optional UI text animation.",
   "architectural_notes": [
-    "Role/permission state may load before backend role initialization completes; ensure role is resolved deterministically on login (avoid transient 'Unknown'/'User').",
-    "If homepage images become admin-uploaded, decide storage strategy (e.g., store URLs/assets and metadata) and ensure updates do not impact other pages/components; Faculty/Staff section remains image-only while Principal section supports full content CRUD.",
-    "Draft deployments use fresh backend state; ensure Super Admin/role assignment is stored in stable state and provide a secure recovery/initialization flow (and/or always display the current Principal ID in-app) so admins can re-establish access after redeployments/updates."
+    "Requested changes should not affect other parts of the system (scope limited to specified sections)."
   ],
-  "known_issues": [
-    "Login role is inconsistent (sometimes 'Unknown' or 'User') and can lead to 'You don't have any permissions assigned yet' despite being intended as Super Admin.",
-    "Facebook embedded Page feed/posts do not appear in desktop view (posts only show on mobile).",
-    "In draft deployments, admin role can appear as User/Guest/Unknown even when live works, indicating Super Admin/role state is not persisted/initialized consistently across canister rebuilds; user requests an alternate recovery path to regain Super Admin access."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-weather-forecast-section-for-barobo-caraga-on-the-home-page-frontend-src-pages-homepage-tsx-positioned-directly-below-the-philippine-standard-time-display-the-philippinetimeclock-area",
-      "title": "Add a weather forecast section for “Barobo, Caraga” on the Home page (frontend/src/pages/HomePage.tsx) positioned directly below the Philippine Standard Time display (the <PhilippineTimeClock /> area).",
+      "id": "feature-add-a-reusable-css-animation-for-blinking-text-including-a-reduced-motion-safe-behavior-and-expose-it-as-a-simple-class-name-that-can-be-applied-to-headings",
+      "title": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-client-side-fetching-of-the-barobo-caraga-forecast-using-react-query-including-loading-and-error-states-and-display-a-concise-forecast-summary-at-minimum-current-conditions-and-a-multi-day-forecast",
-      "title": "Implement client-side fetching of the Barobo, Caraga forecast using React Query, including loading and error states, and display a concise forecast summary (at minimum: current conditions and a multi-day forecast).",
+      "id": "feature-update-the-pageheader-component-to-support-an-optional-blinking-title-mode-without-changing-existing-pages-by-default",
+      "title": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-home-page-frontend-src-pages-homepage-tsx-so-the-area-directly-below-the-philippine-standard-time-clock-displays-a-two-column-layout-on-desktop-tablet-the-existing-weather-forecast-barobo-caraga-section-on-the-left-and-a-facebook-presence-block-on-the-right-for-https-www-facebook-com-barobonationalhighschool-on-small-screens-stack-the-facebook-block-below-the-weather-section",
-      "title": "Update the Home page (frontend/src/pages/HomePage.tsx) so the area directly below the Philippine Standard Time clock displays a two-column layout on desktop/tablet: the existing “Weather Forecast - Barobo, Caraga” section on the left and a Facebook presence block on the right for https://www.facebook.com/BaroboNationalHighSchool. On small screens, stack the Facebook block below the weather section.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-facebook-presence-block-to-prefer-an-embedded-facebook-page-feed-showing-posts-updates-for-https-www-facebook-com-barobonationalhighschool-and-provide-a-graceful-fallback-to-a-clickable-facebook-icon-link-that-opens-the-page-in-a-new-tab-if-embedding-is-unavailable-e-g-blocked-by-browser-privacy-settings-or-fails-to-load",
-      "title": "Implement the Facebook presence block to prefer an embedded Facebook Page feed (showing posts/updates) for https://www.facebook.com/BaroboNationalHighSchool, and provide a graceful fallback to a clickable Facebook icon/link that opens the page in a new tab if embedding is unavailable (e.g., blocked by browser/privacy settings) or fails to load.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-on-the-home-page-two-column-layout-weather-forecast-barobo-caraga-on-the-left-facebook-presence-embed-on-the-right-reduce-limit-the-embedded-facebook-page-feed-height-so-the-right-side-facebook-block-matches-the-rendered-height-of-the-weather-forecast-section-without-changing-other-page-sections-or-global-styling",
-      "title": "On the Home page two-column layout (Weather Forecast - Barobo, Caraga on the left; Facebook presence embed on the right), reduce/limit the embedded Facebook Page feed height so the right-side Facebook block matches the rendered height of the Weather Forecast section, without changing other page sections or global styling.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-home-page-facebook-presence-block-so-the-embedded-facebook-page-timeline-posts-reliably-render-on-desktop-tablet-not-only-on-mobile-for-https-www-facebook-com-barobonationalhighschool",
-      "title": "Fix the Home page Facebook presence block so the embedded Facebook Page timeline/posts reliably render on desktop/tablet (not only on mobile) for https://www.facebook.com/BaroboNationalHighSchool.",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-the-facebook-embed-loading-failure-detection-accurate-and-deterministic-so-the-fallback-link-only-appears-when-the-embed-genuinely-cannot-load-e-g-blocked-by-privacy-settings-network-failure-or-embed-error-and-does-not-incorrectly-trigger-on-desktop",
-      "title": "Make the Facebook embed loading/failure detection accurate and deterministic so the fallback link only appears when the embed genuinely cannot load (e.g., blocked by privacy settings, network failure, or embed error), and does not incorrectly trigger on desktop.",
-      "reqIds": [
-        "REQ-7"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-preserve-the-existing-homepage-two-column-layout-and-the-height-matching-behavior-on-md-viewports-the-right-column-facebook-block-height-must-continue-to-match-the-rendered-height-of-the-left-column-weather-forecast-section-without-affecting-other-home-page-sections-or-global-styling",
-      "title": "Preserve the existing homepage two-column layout and the height-matching behavior: on md+ viewports, the right-column Facebook block height must continue to match the rendered height of the left-column Weather Forecast section without affecting other Home page sections or global styling.",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-home-page-frontend-src-pages-homepage-tsx-to-add-a-new-two-column-content-section-directly-below-the-existing-weather-forecast-facebook-block-and-above-the-school-activities-heading-left-column-content-in-english-title-welcome-to-barobo-national-high-school-website-body-paragraph-text-must-be-justified-empowering-students-to-reach-their-full-potential-through-excellence-in-education-character-development-and-community-engagement-committed-to-providing-quality-education-and-nurturing-future-leaders-in-our-community-through-excellence-in-teaching-and-learning-below-the-body-paragraph-render-a-principal-profile-area-containing-a-principal-photo-name-text-rachel-methuselah-r-cumahig-phd-title-text-below-the-name-principal-iv-a-principal-s-message-text-area-positioned-beside-to-the-right-of-the-principal-photo-on-md-viewports-and-stacked-below-the-photo-on-small-screens-if-no-message-content-is-provided-render-a-short-placeholder-message-text-that-can-be-replaced-later-right-column-content-in-english-title-our-dedicated-faculty-of-jhs-shs-and-staff-of-barobo-national-high-school-and-display-an-icon-next-to-the-title-below-the-title-render-a-faculty-staff-group-image-below-the-image-render-the-following-justified-text-our-school-is-proud-to-have-a-team-of-dedicated-qualified-and-passionate-educators-who-are-committed-to-student-success-our-faculty-members-bring-years-of-experience-and-expertise-to-the-classroom-through-continuous-professional-development-and-training-our-teachers-stay-updated-with-the-latest-educational-methodologies-and-technologies-to-provide-the-best-learning-experience-for-our-students-the-section-must-be-responsive-two-columns-side-by-side-on-md-viewports-and-stacked-vertically-on-small-screens-while-keeping-spacing-and-styling-consistent-with-existing-home-page-sections",
-      "title": "Update the Home page (frontend/src/pages/HomePage.tsx) to add a new two-column content section directly below the existing Weather Forecast + Facebook block and above the “School Activities” heading.\n\nLeft column content (in English):\n- Title: “Welcome to Barobo National High School Website!”\n- Body paragraph (text must be justified): “Empowering students to reach their full potential through excellence in education, character development, and community engagement. Committed to providing quality education and nurturing future leaders in our community through excellence in teaching and learning.”\n- Below the body paragraph, render a principal profile area containing:\n  - A principal photo\n  - Name text: “Rachel Methuselah R. Cumahig, PhD”\n  - Title text below the name: “Principal IV”\n  - A “Principal’s Message” text area positioned beside (to the right of) the principal photo on md+ viewports, and stacked below the photo on small screens. If no message content is provided, render a short placeholder message text that can be replaced later.\n\nRight column content (in English):\n- Title: “Our Dedicated Faculty of JHS, SHS and Staff of Barobo National High School” and display an icon next to the title.\n- Below the title, render a faculty/staff group image.\n- Below the image, render the following justified text:\n  “Our school is proud to have a team of dedicated, qualified, and passionate educators who are committed to student success. Our faculty members bring years of experience and expertise to the classroom.\n\n  Through continuous professional development and training, our teachers stay updated with the latest educational methodologies and technologies to provide the best learning experience for our students”\n\nThe section must be responsive: two columns side-by-side on md+ viewports and stacked vertically on small screens, while keeping spacing and styling consistent with existing Home page sections.",
-      "reqIds": [
-        "REQ-9"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-the-required-static-images-for-the-new-home-page-section-to-the-frontend-as-generated-assets-and-render-them-from-the-client-do-not-route-images-through-the-backend-place-the-final-image-files-under-frontend-public-assets-generated-and-reference-them-from-the-home-page-section-required-images-principal-photo-for-rachel-methuselah-r-cumahig-phd-faculty-staff-group-photo-for-our-dedicated-faculty-of-jhs-shs-and-staff-of-barobo-national-high-school",
-      "title": "Add the required static images for the new Home page section to the frontend as generated assets and render them from the client (do not route images through the backend). Place the final image files under frontend/public/assets/generated and reference them from the Home page section.\n\nRequired images:\n- Principal photo for “Rachel Methuselah R. Cumahig, PhD”.\n- Faculty/staff group photo for “Our Dedicated Faculty of JHS, SHS and Staff of Barobo National High School”.",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-a-new-principal-photo-asset-by-cropping-the-provided-uploaded-image-principal-3-jpg-into-a-perfectly-square-1-1-portrait-centered-on-the-face-horizontally-with-a-small-natural-space-above-the-head-including-head-and-shoulders-and-cropped-slightly-above-the-elbows-export-the-final-image-as-a-clean-sharp-600-600-png-and-place-it-under-frontend-public-assets-generated-as-principal-photo-dim-600x600-png",
-      "title": "Create a new principal photo asset by cropping the provided uploaded image (\"principal 3.jpg\") into a perfectly square (1:1) portrait, centered on the face horizontally, with a small natural space above the head, including head-and-shoulders, and cropped slightly above the elbows; export the final image as a clean, sharp 600×600 PNG and place it under frontend/public/assets/generated as principal-photo.dim_600x600.png.",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-home-page-principal-image-reference-in-frontend-src-pages-homepage-tsx-to-use-assets-generated-principal-photo-dim-600x600-png-replacing-the-current-assets-generated-principal-photo-dim-800x800-png-without-changing-other-home-page-sections-or-layouts",
-      "title": "Update the Home page principal image reference in frontend/src/pages/HomePage.tsx to use /assets/generated/principal-photo.dim_600x600.png (replacing the current /assets/generated/principal-photo.dim_800x800.png) without changing other Home page sections or layouts.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-replace-the-existing-principal-photo-used-on-the-home-page-with-the-user-s-newly-uploaded-principal-image-ensuring-the-final-asset-is-a-clean-sharp-perfectly-square-1-1-600-600-png-centered-on-the-face-horizontally-with-slight-natural-headroom-framed-head-and-shoulders-and-cropped-slightly-above-the-elbows-and-saved-as-frontend-public-assets-generated-principal-photo-dim-600x600-png",
-      "title": "Replace the existing principal photo used on the Home page with the user’s newly uploaded principal image, ensuring the final asset is a clean, sharp, perfectly square (1:1) 600×600 PNG, centered on the face horizontally with slight natural headroom, framed head-and-shoulders and cropped slightly above the elbows, and saved as frontend/public/assets/generated/principal-photo.dim_600x600.png.",
-      "reqIds": [
-        "REQ-13"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-admin-dashboard-ui-frontend-src-pages-admindashboardpage-tsx-to-always-show-the-currently-logged-in-principal-id-from-the-internet-identity-identity-object-with-a-copy-to-clipboard-control-so-the-user-can-reliably-identify-their-principal-even-if-backend-role-permissions-are-temporarily-unknown",
-      "title": "Update the Admin Dashboard UI (frontend/src/pages/AdminDashboardPage.tsx) to always show the currently logged-in Principal ID (from the Internet Identity identity object) with a copy-to-clipboard control, so the user can reliably identify their Principal even if backend role/permissions are temporarily \"Unknown\".",
-      "reqIds": [
-        "REQ-16"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-super-admin-recovery-section-on-the-admin-dashboard-that-provides-an-alternate-way-to-regain-access-by-triggering-the-new-backend-recovery-initialization-api-and-clearly-communicating-outcomes-in-english-success-error-show-this-section-only-when-the-user-is-logged-in-but-does-not-currently-have-super-admin-access",
-      "title": "Add a \"Super Admin Recovery\" section on the Admin Dashboard that provides an alternate way to regain access by triggering the new backend recovery/initialization API and clearly communicating outcomes in English (success/error). Show this section only when the user is logged in but does not currently have Super Admin access.",
-      "reqIds": [
-        "REQ-17"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-the-post-login-admin-experience-reliably-resolve-the-correct-role-by-ensuring-a-role-initializing-shared-call-is-executed-after-a-successful-internet-identity-login-so-the-system-does-not-remain-stuck-showing-role-unknown-guest-due-to-only-query-calls-being-made",
-      "title": "Make the post-login admin experience reliably resolve the correct role by ensuring a role-initializing shared call is executed after a successful Internet Identity login (so the system does not remain stuck showing role \"Unknown\"/\"Guest\" due to only query calls being made).",
-      "reqIds": [
-        "REQ-18"
       ],
       "version": 1
     }
@@ -146,70 +28,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Display a weather forecast for Barobo, Caraga on the home page below the Philippine Standard Time section",
+      "summary": "Add admin controls for Principal Section (upload photo; edit name, position, message; CRUD principal content)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Permanently assign/lock the correct Internet Identity as Super Admin so role and permissions are consistent immediately on login",
+      "summary": "Add admin controls for Faculty & Staff Section (upload/replace group photos for JHS, SHS, Staff only; keep text fixed)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Add Barobo National High School Facebook presence on the Home page to the right of the Barobo, Caraga weather forecast (embedded feed showing posts/updates or a clickable Facebook icon/link to https://www.facebook.com/BaroboNationalHighSchool)",
+      "summary": "Support animated/blinking title text output (UI text animation option)",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Reduce the height of the embedded Facebook feed on the Home page so it matches the height of the “Weather Forecast - Barobo, Caraga” section (right column) without impacting other parts of the system",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Add a new Home page content section: left column 'Welcome to Barobo National High School Website!' with justified intro text plus principal image/name/title and message; right column 'Our Dedicated Faculty of JHS, SHS and Staff...' with icon, faculty image, and justified descriptive text",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Add admin panel controls to manage Home page Principal section (upload photo + CRUD for name/position/message) and to upload/replace the Faculty & Staff group photo only (text remains fixed), without affecting other parts of the system",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Replace/update the Principal photo asset using a clean 1:1 square crop and display it as a 600×600px image on the Home page",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Provide an alternative/admin recovery method to regain Super Admin access when the role shows as User/Unknown (e.g., show the logged-in Principal ID in the UI and/or add a secure Super Admin re-initialization/reset flow that does not rely on external tools like whoami.ic0.app)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Persist Super Admin identity and initialization state across canister upgrades so Super Admin access does not get lost after rebuilds/updates.",
-      "reqIds": [
-        "REQ-14"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Add a deterministic, authenticated Super Admin recovery/initialization API that allows regaining Super Admin access without relying on the user finding/copying a Principal ID from external tools. The flow must be safe-by-default and must not allow anonymous callers to become Super Admin.",
-      "reqIds": [
-        "REQ-15"
-      ],
       "status": "pending"
     }
   ],
-  "projectName": "Add Barobo, Caraga weather forecast below Philippine Standard Time on Home page",
+  "projectName": "Add optional blinking animation for page title text",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

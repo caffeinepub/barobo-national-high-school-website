@@ -73,6 +73,18 @@ export default {
                 'school-gold': {
                     DEFAULT: 'oklch(var(--school-gold))',
                     dark: 'oklch(var(--school-gold-dark))'
+                },
+                'school-blue': {
+                    DEFAULT: 'oklch(var(--school-blue))',
+                    dark: 'oklch(var(--school-blue-dark))'
+                },
+                'charter-green': {
+                    DEFAULT: 'oklch(var(--charter-green))',
+                    dark: 'oklch(var(--charter-green-dark))'
+                },
+                'charter-sky-blue': {
+                    DEFAULT: 'oklch(var(--charter-sky-blue))',
+                    dark: 'oklch(var(--charter-sky-blue-dark))'
                 }
             },
             borderRadius: {
@@ -80,17 +92,22 @@ export default {
                 md: 'calc(var(--radius) - 2px)',
                 sm: 'calc(var(--radius) - 4px)'
             },
-            boxShadow: {
-                xs: '0 1px 2px 0 rgba(0,0,0,0.05)'
-            },
             keyframes: {
                 'accordion-down': {
-                    from: { height: '0' },
-                    to: { height: 'var(--radix-accordion-content-height)' }
+                    from: {
+                        height: '0'
+                    },
+                    to: {
+                        height: 'var(--radix-accordion-content-height)'
+                    }
                 },
                 'accordion-up': {
-                    from: { height: 'var(--radix-accordion-content-height)' },
-                    to: { height: '0' }
+                    from: {
+                        height: 'var(--radix-accordion-content-height)'
+                    },
+                    to: {
+                        height: '0'
+                    }
                 }
             },
             animation: {
@@ -99,6 +116,5 @@ export default {
             }
         }
     },
-    plugins: [typography, containerQueries, animate]
+    plugins: [animate, typography, containerQueries]
 };
-

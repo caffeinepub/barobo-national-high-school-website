@@ -1,119 +1,54 @@
 {
   "kind": "build_request",
-  "title": "Add Super Admin recovery flow and make Super Admin role initialization reliable",
-  "priority": "high",
+  "title": "Add optional blinking animation for page title text",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-14",
-      "text": "Persist Super Admin identity and initialization state across canister upgrades so Super Admin access does not get lost after rebuilds/updates.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-20"
-        ],
-        "quotes": [
-          "fix it so that I can access the super admin make another way"
-        ]
-      },
-      "acceptanceCriteria": [
-        "After a canister upgrade, the previously-initialized Super Admin Principal remains the Super Admin without requiring re-initialization.",
-        "Role checks (e.g., getCallerRole) continue to return \"SuperAdmin\" for the persisted Super Admin Principal after upgrade."
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "text": "Add a deterministic, authenticated Super Admin recovery/initialization API that allows regaining Super Admin access without relying on the user finding/copying a Principal ID from external tools. The flow must be safe-by-default and must not allow anonymous callers to become Super Admin.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-20"
-        ],
-        "quotes": [
-          "fix it so that I can access the super admin make another way"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When called by an authenticated (non-anonymous) user on an uninitialized canister, the recovery/initialization API sets that caller as Super Admin and subsequent getCallerRole returns \"SuperAdmin\".",
-        "When called on an already-initialized canister by a non-Super-Admin, the API does not change the stored Super Admin and returns an error (or otherwise denies the action).",
-        "Anonymous callers cannot use this API to become Super Admin."
-      ]
-    },
-    {
-      "id": "REQ-16",
-      "text": "Update the Admin Dashboard UI (frontend/src/pages/AdminDashboardPage.tsx) to always show the currently logged-in Principal ID (from the Internet Identity identity object) with a copy-to-clipboard control, so the user can reliably identify their Principal even if backend role/permissions are temporarily \"Unknown\".",
+      "id": "REQ-1",
+      "text": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-20"
+          "msg-1"
         ],
         "quotes": [
-          "fix it so that I can access the super admin make another way"
+          "can I ask can be produced output that animate text like blinking the title text?"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in, the Admin Dashboard shows a \"Principal ID\" line containing the full principal text.",
-        "A user can copy the Principal ID via a visible UI control (e.g., button) and receives a clear success indication (e.g., \"Copied\").",
-        "This Principal ID display renders regardless of whether the backend role query returns \"Unknown\"/errors."
+        "A new blink animation exists in the global styles (e.g., in frontend/src/index.css) as a class that can be applied to any element.",
+        "When the user has prefers-reduced-motion enabled, the blinking animation is disabled (no blinking occurs)."
       ]
     },
     {
-      "id": "REQ-17",
-      "text": "Add a \"Super Admin Recovery\" section on the Admin Dashboard that provides an alternate way to regain access by triggering the new backend recovery/initialization API and clearly communicating outcomes in English (success/error). Show this section only when the user is logged in but does not currently have Super Admin access.",
+      "id": "REQ-2",
+      "text": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-20"
+          "msg-1"
         ],
         "quotes": [
-          "fix it so that I can access the super admin make another way"
+          "can I ask can be produced output that animate text like blinking the title text?"
         ]
       },
       "acceptanceCriteria": [
-        "If the logged-in user is not Super Admin, the Admin Dashboard shows a \"Super Admin Recovery\" section.",
-        "Clicking a recovery button runs the recovery/initialization action and, on success, the dashboard updates to show Role: SuperAdmin and unlocks Super Admin-only cards.",
-        "If the canister is already initialized to a different Super Admin, the UI shows a clear English error message explaining that only the current Super Admin can change Super Admin access."
-      ]
-    },
-    {
-      "id": "REQ-18",
-      "text": "Make the post-login admin experience reliably resolve the correct role by ensuring a role-initializing shared call is executed after a successful Internet Identity login (so the system does not remain stuck showing role \"Unknown\"/\"Guest\" due to only query calls being made).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-20"
-        ],
-        "quotes": [
-          "fix it so that I can access the super admin make another way"
-        ]
-      },
-      "acceptanceCriteria": [
-        "After logging in via the Header \"Admin Login\" flow, the Admin Dashboard consistently shows the correct role (e.g., SuperAdmin/AdminUser/User) without requiring manual refreshes.",
-        "The UI no longer commonly displays transient \"Unknown\" role due to missing initialization calls when the canister is not yet initialized."
+        "PageHeader accepts a new optional prop (e.g., blinkTitle?: boolean) that defaults to false.",
+        "When blinkTitle is true, the <h1> title in PageHeader uses the blink animation class and visibly blinks.",
+        "When blinkTitle is false or omitted, the title renders exactly as it does currently (no animation)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/immutablePaths (e.g., frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/components/ui).",
-    "Backend must remain single-actor; keep Motoko logic in backend/main.mo. Create backend/migration.mo only if required by state persistence changes.",
-    "All user-facing text introduced by this change must be in English."
+    "Do not modify files listed as immutable in SYSTEM_CONTEXT (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not add any third-party authentication providers (only Internet Identity).",
-    "Do not add external databases or non-IC backend services.",
-    "Do not implement a multi-canister or microservices architecture."
+    "Do not add new admin panels or backend settings for controlling the animation.",
+    "Do not apply blinking to every page title automatically; it must be opt-in per usage."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

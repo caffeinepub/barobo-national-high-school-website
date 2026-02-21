@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, AlertCircle, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { ExternalBlob, FormattedText, TextAlignment, FontStyle } from '../backend';
-import { convertToDirectImageUrl, detectCloudProvider, getProviderName } from '@/lib/urlConverter';
+import { ArrowLeft, AlertCircle, Save, Image as ImageIcon, Loader2, AlertTriangle } from 'lucide-react';
+import { FormattedText, TextAlignment, FontStyle } from '../backend';
+import { convertToDirectImageUrl, detectCloudProvider } from '@/lib/urlConverter';
+import { uploadFile, uploadFromURL, validateUploadedBlob } from '@/lib/externalBlobUpload';
+import { getUploadErrorMessage, logUploadError } from '@/lib/uploadErrorMessage';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -30,13 +32,15 @@ export default function HistoryManagementPage() {
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [validationWarning, setValidationWarning] = useState<string>('');
 
   useEffect(() => {
     if (historyContent) {
       setTitle(historyContent.title || '');
       setEditorContent(historyContent.formattedText?.content || '');
       if (historyContent.backgroundImage) {
-        const bgUrl = `${historyContent.backgroundImage.getDirectURL()}?t=${historyContent.lastUpdated}`;
+        const bgUrl = historyContent.backgroundImage.getDirectURL();
         setPreviewUrl(bgUrl);
       } else {
         setPreviewUrl('');
@@ -96,7 +100,7 @@ export default function HistoryManagementPage() {
       setIsValidating(false);
       setValidationError('');
       if (historyContent?.backgroundImage) {
-        setPreviewUrl(`${historyContent.backgroundImage.getDirectURL()}?t=${historyContent.lastUpdated}`);
+        setPreviewUrl(historyContent.backgroundImage.getDirectURL());
       } else {
         setPreviewUrl('');
       }
@@ -138,6 +142,7 @@ export default function HistoryManagementPage() {
       setImageFile(file);
       setImageUrl('');
       setValidationError('');
+      setValidationWarning('');
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -188,7 +193,15 @@ export default function HistoryManagementPage() {
       return;
     }
 
+    if (isUploading) {
+      toast.error('Please wait for the current upload to complete');
+      return;
+    }
+
     try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      setValidationWarning('');
       const formattedText = parseFormattedTextFromHTML(editorContent);
 
       // First update the text content
@@ -199,59 +212,116 @@ export default function HistoryManagementPage() {
 
       // Then update background image if provided
       if (imageFile || imageUrl.trim()) {
-        let backgroundBlob: ExternalBlob;
+        try {
+          let backgroundBlob;
 
-        if (imageFile) {
-          const arrayBuffer = await imageFile.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          backgroundBlob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-            setUploadProgress(percentage);
-          });
-        } else {
-          const convertedUrl = convertToDirectImageUrl(imageUrl.trim());
-          backgroundBlob = ExternalBlob.fromURL(convertedUrl);
+          if (imageFile) {
+            backgroundBlob = await uploadFile(imageFile, {
+              onProgress: (percentage) => setUploadProgress(percentage),
+              onError: (error) => logUploadError(error, 'History Background Upload'),
+            });
+          } else {
+            const convertedUrl = convertToDirectImageUrl(imageUrl.trim());
+            backgroundBlob = uploadFromURL(convertedUrl);
+          }
+
+          await updateBackgroundMutation.mutateAsync(backgroundBlob);
+          
+          // Validate that the blob URL is accessible (non-blocking)
+          const validationResult = await validateUploadedBlob(backgroundBlob);
+          
+          if (validationResult.status === 'pending') {
+            setValidationWarning(validationResult.message);
+            toast.success('History content saved! Background image is still processing.', {
+              duration: 5000,
+            });
+          } else if (validationResult.status === 'failed') {
+            logUploadError(validationResult.error, 'History Background Validation');
+            setValidationWarning('Background image saved but could not be verified. Please refresh the page.');
+            toast.success('History content saved! Please refresh to verify the background image.', {
+              duration: 5000,
+            });
+          } else {
+            toast.success('History content and background updated successfully!');
+          }
+        } catch (uploadError) {
+          logUploadError(uploadError, 'History Background Upload');
+          toast.error(getUploadErrorMessage(uploadError));
+          setUploadProgress(0);
+          setIsUploading(false);
+          return;
         }
-
-        await updateBackgroundMutation.mutateAsync(backgroundBlob);
+      } else {
+        toast.success('History content updated successfully!');
       }
 
-      toast.success('History content updated successfully!');
       setImageFile(null);
       setImageUrl('');
       setUploadProgress(0);
     } catch (error: any) {
-      console.error('Update error:', error);
-      toast.error(error.message || 'Failed to update history content');
+      logUploadError(error, 'History Content Update');
+      toast.error(getUploadErrorMessage(error));
+      setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleUpdateBackgroundOnly = async () => {
+    if (isUploading) {
+      toast.error('Please wait for the current upload to complete');
+      return;
+    }
+
     try {
-      let backgroundBlob: ExternalBlob;
+      setIsUploading(true);
+      setUploadProgress(0);
+      setValidationWarning('');
+      let backgroundBlob;
 
       if (imageFile) {
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        backgroundBlob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-          setUploadProgress(percentage);
+        backgroundBlob = await uploadFile(imageFile, {
+          onProgress: (percentage) => setUploadProgress(percentage),
+          onError: (error) => logUploadError(error, 'History Background Only Upload'),
         });
       } else if (imageUrl.trim()) {
         const convertedUrl = convertToDirectImageUrl(imageUrl.trim());
-        backgroundBlob = ExternalBlob.fromURL(convertedUrl);
+        backgroundBlob = uploadFromURL(convertedUrl);
       } else {
         toast.error('Please provide a background image');
+        setIsUploading(false);
         return;
       }
 
       await updateBackgroundMutation.mutateAsync(backgroundBlob);
+      
+      // Validate that the blob URL is accessible (non-blocking)
+      const validationResult = await validateUploadedBlob(backgroundBlob);
+      
+      if (validationResult.status === 'pending') {
+        setValidationWarning(validationResult.message);
+        toast.success('Background image uploaded! It is still processing.', {
+          duration: 5000,
+        });
+      } else if (validationResult.status === 'failed') {
+        logUploadError(validationResult.error, 'History Background Validation');
+        setValidationWarning('Background image saved but could not be verified. Please refresh the page.');
+        toast.success('Background image uploaded! Please refresh to verify.', {
+          duration: 5000,
+        });
+      } else {
+        toast.success('Background image updated successfully!');
+      }
 
-      toast.success('Background image updated successfully!');
       setImageFile(null);
       setImageUrl('');
       setUploadProgress(0);
     } catch (error: any) {
-      console.error('Background update error:', error);
-      toast.error(error.message || 'Failed to update background image');
+      logUploadError(error, 'History Background Only Update');
+      toast.error(getUploadErrorMessage(error));
+      setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -284,6 +354,15 @@ export default function HistoryManagementPage() {
           <h1 className="text-3xl font-bold text-school-blue">History Management</h1>
         </div>
 
+        {validationWarning && (
+          <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              {validationWarning}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isLoading ? (
           <Card className="border-school-gold/20 shadow-lg">
             <CardHeader>
@@ -301,122 +380,101 @@ export default function HistoryManagementPage() {
             <AlertDescription>Failed to load history content. Please try again later.</AlertDescription>
           </Alert>
         ) : (
-          <div className="space-y-6">
-            {/* Content Editor */}
-            <Card className="border-school-gold/20 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-school-blue">Heritage Section Content</CardTitle>
-                <CardDescription>Edit the title and text content for the History page with rich formatting</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <Card className="border-school-gold/20 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-school-blue">Edit History Content</CardTitle>
+              <CardDescription>
+                Update the title, text content, and optional background image for the History page
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-[#800000] font-semibold">
+                  Title
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter history section title"
+                  className="border-school-gold/30 focus:border-school-gold"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#800000] font-semibold">
+                  Text Content
+                </Label>
+                <div className="heritage-editor-container">
+                  <ReactQuill
+                    theme="snow"
+                    value={editorContent}
+                    onChange={setEditorContent}
+                    modules={modules}
+                    formats={formats}
+                    placeholder="Enter history content here..."
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-school-gold/20 p-4">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-school-maroon" />
+                  <Label className="text-[#800000] font-semibold">
+                    Background Image (Optional)
+                  </Label>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="title">Heritage Section Title</Label>
+                  <Label htmlFor="image-file" className="text-sm text-gray-600">
+                    Upload from Device
+                  </Label>
                   <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter section title (e.g., Our Heritage)"
-                    className="text-lg"
+                    id="image-file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="border-school-gold/30"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="textContent">Text Content</Label>
-                  <div className="heritage-editor-wrapper border rounded-md overflow-hidden">
-                    <ReactQuill
-                      theme="snow"
-                      value={editorContent}
-                      onChange={setEditorContent}
-                      modules={modules}
-                      formats={formats}
-                      placeholder="Enter the history content with formatting..."
-                      className="min-h-[300px]"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use the toolbar to format text with alignment, font size, bold, italic, and underline styles.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Background Image Manager */}
-            <Card className="border-school-gold/20 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-school-blue">Background Image (Optional)</CardTitle>
-                <CardDescription>Upload or link to a background image for the History page</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="imageFile">Upload from Device</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="imageFile"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setImageFile(null);
-                        const input = document.getElementById('imageFile') as HTMLInputElement;
-                        if (input) input.value = '';
-                        if (historyContent?.backgroundImage) {
-                          setPreviewUrl(`${historyContent.backgroundImage.getDirectURL()}?t=${historyContent.lastUpdated}`);
-                        } else {
-                          setPreviewUrl('');
-                        }
-                      }}
-                      disabled={!imageFile}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-gray-300" />
+                  <span className="text-sm text-gray-500">OR</span>
+                  <div className="h-px flex-1 bg-gray-300" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="imageUrl">External Image URL (Google Drive, OneDrive, Dropbox)</Label>
+                  <Label htmlFor="image-url" className="text-sm text-gray-600">
+                    External Image Link
+                  </Label>
                   <Input
-                    id="imageUrl"
+                    id="image-url"
+                    type="url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="Paste image URL here..."
-                    disabled={!!imageFile}
+                    placeholder="Paste image URL (Google Drive, OneDrive, Dropbox, etc.)"
+                    className="border-school-gold/30"
                   />
                   {isValidating && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                    <p className="text-sm text-blue-600 flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       Validating...
                     </p>
                   )}
                   {validationError && (
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="mt-2">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription className="text-sm">{validationError}</AlertDescription>
                     </Alert>
-                  )}
-                  {imageUrl && !isValidating && !validationError && (
-                    <p className="text-sm text-green-600 flex items-center gap-2">
-                      ✓ Valid {getProviderName(detectCloudProvider(imageUrl))} image URL
-                    </p>
                   )}
                 </div>
 
                 {previewUrl && (
                   <div className="space-y-2">
-                    <Label>Preview</Label>
-                    <div className="heritage-background-preview relative aspect-[16/5] w-full overflow-hidden rounded-lg border bg-gray-50">
+                    <Label className="text-sm text-gray-600">Preview</Label>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-gray-100">
                       <img
                         src={previewUrl}
                         alt="Background preview"
@@ -426,95 +484,52 @@ export default function HistoryManagementPage() {
                   </div>
                 )}
 
-                {!previewUrl && (
-                  <div className="space-y-2">
-                    <Label>Preview</Label>
-                    <div className="heritage-background-preview relative aspect-[16/5] w-full overflow-hidden rounded-lg border bg-gray-50 flex items-center justify-center">
-                      <div className="text-center text-muted-foreground">
-                        <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No background image selected</p>
-                        <p className="text-xs">A neutral background will be used</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {uploadProgress > 0 && uploadProgress < 100 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Uploading...</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-school-blue transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
+                {(imageFile || imageUrl.trim()) && (
                   <Button
                     onClick={handleUpdateBackgroundOnly}
-                    disabled={
-                      updateBackgroundMutation.isPending ||
-                      (!imageFile && !imageUrl.trim()) ||
-                      isValidating ||
-                      !!validationError
-                    }
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-                    variant="default"
+                    disabled={isUploading || updateBackgroundMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    {updateBackgroundMutation.isPending ? (
+                    {isUploading || updateBackgroundMutation.isPending ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Updating...
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {uploadProgress > 0 && uploadProgress < 100
+                          ? `Uploading... ${uploadProgress}%`
+                          : 'Updating...'}
                       </>
                     ) : (
                       <>
-                        <ImageIcon className="h-4 w-4" />
+                        <ImageIcon className="h-4 w-4 mr-2" />
                         Update Background Only
                       </>
                     )}
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
 
-            {/* Save All Button */}
-            <Card className="border-school-gold/20 shadow-lg">
-              <CardContent className="pt-6">
+              <div className="flex gap-4">
                 <Button
                   onClick={handleSaveContent}
-                  disabled={
-                    updateContentMutation.isPending ||
-                    !title.trim() ||
-                    !editorContent.trim() ||
-                    isValidating ||
-                    !!validationError
-                  }
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  size="lg"
+                  disabled={isUploading || updateContentMutation.isPending || updateBackgroundMutation.isPending}
+                  className="flex-1 bg-[#800000] hover:bg-[#9a0000] text-white"
                 >
-                  {updateContentMutation.isPending ? (
+                  {isUploading || updateContentMutation.isPending || updateBackgroundMutation.isPending ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Saving...
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {uploadProgress > 0 && uploadProgress < 100
+                        ? `Uploading... ${uploadProgress}%`
+                        : 'Saving...'}
                     </>
                   ) : (
                     <>
-                      <Save className="h-5 w-5" />
+                      <Save className="h-4 w-4 mr-2" />
                       Save All Changes
                     </>
                   )}
                 </Button>
-                <p className="mt-2 text-center text-sm text-muted-foreground">
-                  Changes will appear instantly on the History page
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

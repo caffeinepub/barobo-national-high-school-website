@@ -12,6 +12,8 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import OutCall "http-outcalls/outcall";
 
+// Do not modify or delete any empty actors. These ensure that a functional canister is deployed and available for HTTP requests.
+// Do not remove the blob-storage functional import or the initializeStorage function.
 actor {
   include MixinStorage();
 
@@ -51,6 +53,25 @@ actor {
 
   var accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  public type SuperAdminStatus = {
+    isInitialized : Bool;
+    isValid : Bool;
+    superAdminPrincipal : ?Principal;
+  };
+
+  public query func getSuperAdminStatus() : async SuperAdminStatus {
+    let isValid = switch (superAdminPrincipal) {
+      case (null) { not isInitialized };
+      case (?_) { isInitialized };
+    };
+
+    {
+      isInitialized;
+      isValid;
+      superAdminPrincipal;
+    };
+  };
 
   public shared ({ caller }) func initializeSuperAdmin() : async Principal {
     if (isInitialized) {
@@ -1353,7 +1374,14 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCitizenCharterBackgroundImage(
+  public query func getCitizenCharterBackgroundImage() : async ?Storage.ExternalBlob {
+    switch (citizenCharterBackground) {
+      case (null) { null };
+      case (?bg) { bg.backgroundImage };
+    };
+  };
+
+  public query ({ caller }) func getCitizenCharterBackgroundImageAdmin(
     timestamp : Int
   ) : async ?Storage.ExternalBlob {
     requireInitialized();
@@ -1409,6 +1437,13 @@ actor {
         Runtime.trap("No static image found for the Citizen Charter. Please upload an image first!");
       };
       case (?staticImage) { staticImage };
+    };
+  };
+
+  public query func getCitizenCharterStaticImagePublic() : async ?Storage.ExternalBlob {
+    switch (citizenCharterStaticImage) {
+      case (null) { null };
+      case (?staticImage) { staticImage.staticImage };
     };
   };
 
@@ -2003,3 +2038,4 @@ actor {
     };
   };
 };
+

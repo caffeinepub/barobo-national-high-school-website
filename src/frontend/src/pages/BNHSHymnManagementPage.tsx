@@ -1,213 +1,124 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
+import { useGetBNHSHymnVideo, useSetBNHSHymn } from '@/hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Loader2, Video } from 'lucide-react';
-import { useGetBNHSHymnVideo, useSetBNHSHymn, useRemoveBNHSHymn } from '@/hooks/useQueries';
-import { ExternalBlob } from '@/backend';
-import { convertToDirectImageUrl, detectCloudProvider, getProviderName } from '@/lib/urlConverter';
-import { validateProxiedImageUrl } from '@/lib/imageProxy';
+import { ArrowLeft, Upload, AlertCircle, Loader2, Video, AlertTriangle } from 'lucide-react';
+import { convertToDirectImageUrl } from '@/lib/urlConverter';
+import { uploadFile, uploadFromURL, validateUploadedBlob } from '@/lib/externalBlobUpload';
+import { getUploadErrorMessage, logUploadError } from '@/lib/uploadErrorMessage';
 import { toast } from 'sonner';
 
 export default function BNHSHymnManagementPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
-  const { data: currentVideo, isLoading: videoLoading } = useGetBNHSHymnVideo();
-  const uploadVideoMutation = useSetBNHSHymn();
-  const removeVideoMutation = useRemoveBNHSHymn();
+  const { data: hymnVideo, isLoading } = useGetBNHSHymnVideo();
+  const setHymnMutation = useSetBNHSHymn();
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationMessage, setValidationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [validationWarning, setValidationWarning] = useState<string>('');
 
   useEffect(() => {
-    if (currentVideo) {
-      const videoUrl = currentVideo.getDirectURL();
-      setPreviewUrl(videoUrl);
+    if (hymnVideo) {
+      const url = hymnVideo.getDirectURL();
+      setPreviewUrl(url);
     }
-  }, [currentVideo]);
+  }, [hymnVideo]);
 
-  // Auto-save function with debounce
-  const autoSave = useCallback(async (blob: ExternalBlob) => {
-    try {
-      await uploadVideoMutation.mutateAsync(blob);
-      toast.success('Auto-saved successfully ✅');
-    } catch (error: any) {
-      console.error('Auto-save error:', error);
-      toast.error('Auto-save failed. Please try manual save.');
-    }
-  }, [uploadVideoMutation]);
-
-  // Validate external URL with debounce
   useEffect(() => {
     if (uploadMode === 'url' && videoUrl.trim()) {
-      const timeoutId = setTimeout(async () => {
-        setIsValidating(true);
-        setValidationMessage(null);
-
-        const provider = detectCloudProvider(videoUrl);
-        if (provider !== 'other') {
-          const providerName = getProviderName(provider);
-          setValidationMessage({
-            type: 'success',
-            text: `${providerName} link detected. Converting to direct URL...`,
-          });
-        }
-
+      const timeoutId = setTimeout(() => {
         const directUrl = convertToDirectImageUrl(videoUrl);
-        const validation = await validateProxiedImageUrl(directUrl);
-
-        setIsValidating(false);
-
-        if (validation.valid) {
-          setValidationMessage({
-            type: 'success',
-            text: 'Video URL is valid and accessible!',
-          });
-          setPreviewUrl(directUrl);
-          
-          // Auto-save after successful validation
-          if (autoSaveTimer) clearTimeout(autoSaveTimer);
-          const timer = setTimeout(() => {
-            const blob = ExternalBlob.fromURL(directUrl);
-            autoSave(blob);
-          }, 2000);
-          setAutoSaveTimer(timer);
-        } else {
-          setValidationMessage({
-            type: 'error',
-            text: validation.error || 'Failed to validate video URL',
-          });
-          setPreviewUrl(null);
-        }
+        setPreviewUrl(directUrl);
       }, 300);
 
       return () => clearTimeout(timeoutId);
-    } else {
-      setValidationMessage(null);
-      if (uploadMode === 'url') {
-        setPreviewUrl(null);
-      }
+    } else if (uploadMode === 'url') {
+      setPreviewUrl(null);
     }
-  }, [videoUrl, uploadMode, autoSave, autoSaveTimer]);
+  }, [videoUrl, uploadMode]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('video/')) {
-        setVideoFile(file);
-        const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(objectUrl);
-        setValidationMessage({ type: 'success', text: 'Video file selected successfully!' });
-        
-        // Auto-save after file selection
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        const timer = setTimeout(async () => {
-          try {
-            const arrayBuffer = await file.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            const blob = ExternalBlob.fromBytes(uint8Array);
-            await autoSave(blob);
-          } catch (error) {
-            console.error('Auto-save error:', error);
-          }
-        }, 2000);
-        setAutoSaveTimer(timer);
-      } else {
-        setValidationMessage({ type: 'error', text: 'Please select a valid video file (MP4, WebM, etc.)' });
-        setVideoFile(null);
-        setPreviewUrl(null);
+      if (!file.type.startsWith('video/')) {
+        toast.error('Please select a valid video file');
+        return;
       }
+
+      setVideoFile(file);
+      setValidationWarning('');
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
     }
   };
 
   const handleUpload = async () => {
+    if (isUploading) {
+      toast.error('Please wait for the current upload to complete');
+      return;
+    }
+
     try {
+      setIsUploading(true);
       setUploadProgress(0);
-      setValidationMessage({ type: 'success', text: 'Starting upload...' });
+      setValidationWarning('');
+      let videoBlob;
 
       if (uploadMode === 'file' && videoFile) {
-        const arrayBuffer = await videoFile.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-          setUploadProgress(percentage);
-          setValidationMessage({ 
-            type: 'success', 
-            text: `Uploading video... ${Math.round(percentage)}%` 
-          });
+        videoBlob = await uploadFile(videoFile, {
+          onProgress: (percentage) => setUploadProgress(percentage),
+          onError: (error) => logUploadError(error, 'BNHS Hymn Upload'),
         });
-
-        await uploadVideoMutation.mutateAsync(blob);
-        
-        toast.success('Video uploaded successfully ✅');
-        setValidationMessage({ type: 'success', text: 'Video uploaded successfully!' });
-        setVideoFile(null);
-        setUploadProgress(0);
-        
-        const fileInput = document.getElementById('video-file') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-        
       } else if (uploadMode === 'url' && videoUrl.trim()) {
         const directUrl = convertToDirectImageUrl(videoUrl);
-        
-        setValidationMessage({ type: 'success', text: 'Processing external video link...' });
-        
-        const blob = ExternalBlob.fromURL(directUrl).withUploadProgress((percentage) => {
-          setUploadProgress(percentage);
-          setValidationMessage({ 
-            type: 'success', 
-            text: `Processing video... ${Math.round(percentage)}%` 
-          });
+        videoBlob = uploadFromURL(directUrl);
+      } else {
+        toast.error('Please provide a video file or URL');
+        setIsUploading(false);
+        return;
+      }
+
+      await setHymnMutation.mutateAsync(videoBlob);
+      
+      // Validate that the blob URL is accessible (non-blocking)
+      const validationResult = await validateUploadedBlob(videoBlob);
+      
+      if (validationResult.status === 'pending') {
+        setValidationWarning(validationResult.message);
+        toast.success('BNHS Hymn video uploaded! It is still processing.', {
+          duration: 5000,
         });
-
-        await uploadVideoMutation.mutateAsync(blob);
-        
-        toast.success('Video from external link uploaded successfully ✅');
-        setValidationMessage({ type: 'success', text: 'Video from external link uploaded successfully!' });
-        setVideoUrl('');
-        setUploadProgress(0);
+      } else if (validationResult.status === 'failed') {
+        logUploadError(validationResult.error, 'BNHS Hymn Validation');
+        setValidationWarning('Video saved but could not be verified. Please refresh the page.');
+        toast.success('BNHS Hymn video uploaded! Please refresh to verify.', {
+          duration: 5000,
+        });
+      } else {
+        toast.success('BNHS Hymn video uploaded successfully!');
       }
-    } catch (error: any) {
-      console.error('Upload error:', error);
+
+      setVideoFile(null);
+      setVideoUrl('');
       setUploadProgress(0);
-      toast.error(error.message || 'Failed to upload video');
-      setValidationMessage({ 
-        type: 'error', 
-        text: error.message || 'Failed to upload video. Please try again.' 
-      });
+    } catch (error: any) {
+      logUploadError(error, 'BNHS Hymn Upload');
+      toast.error(getUploadErrorMessage(error));
+      setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
     }
   };
-
-  const handleRemove = async () => {
-    if (window.confirm('Are you sure you want to remove the BNHS Hymn video?')) {
-      try {
-        await removeVideoMutation.mutateAsync();
-        toast.success('Video removed successfully ✅');
-        setValidationMessage({ type: 'success', text: 'Video removed successfully!' });
-        setPreviewUrl(null);
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to remove video');
-        setValidationMessage({ type: 'error', text: error.message || 'Failed to remove video' });
-      }
-    }
-  };
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-    };
-  }, [autoSaveTimer]);
 
   if (!identity) {
     return (
@@ -224,8 +135,6 @@ export default function BNHSHymnManagementPage() {
     );
   }
 
-  const isUploading = uploadVideoMutation.isPending || uploadProgress > 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-school-blue/5 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -234,104 +143,94 @@ export default function BNHSHymnManagementPage() {
             onClick={() => navigate({ to: '/admin/dashboard' })} 
             className="gap-2 bg-[#800000] hover:bg-[#9a0000] text-white"
           >
-            <ArrowLeft className="h-4 w-4 text-white" />
+            <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold text-school-blue">BNHS Hymn Management</h1>
         </div>
 
-        {validationMessage && (
-          <Alert variant={validationMessage.type === 'error' ? 'destructive' : 'default'} className="mb-6">
-            {validationMessage.type === 'success' ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <AlertCircle className="h-4 w-4" />
-            )}
-            <AlertDescription>{validationMessage.text}</AlertDescription>
+        {validationWarning && (
+          <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              {validationWarning}
+            </AlertDescription>
           </Alert>
         )}
 
-        <Card className="mb-6 border-school-gold/20 shadow-lg">
+        <Card className="border-school-gold/20 shadow-lg">
           <CardHeader>
             <CardTitle className="text-school-blue flex items-center gap-2">
               <Video className="h-5 w-5" />
               Upload BNHS Hymn Video
             </CardTitle>
             <CardDescription>
-              Upload a video file from your device or paste an external video link. Changes are automatically saved.
+              Upload a video file from your device or provide an external link
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
+          <CardContent className="space-y-6">
+            <div className="flex gap-4 border-b pb-4">
               <Button
                 variant={uploadMode === 'file' ? 'default' : 'outline'}
                 onClick={() => setUploadMode('file')}
-                className={uploadMode === 'file' ? 'bg-school-maroon hover:bg-school-maroon-dark' : ''}
-                disabled={isUploading}
+                className={uploadMode === 'file' ? 'bg-[#800000] hover:bg-[#9a0000]' : ''}
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload File
+                Upload from Device
               </Button>
               <Button
                 variant={uploadMode === 'url' ? 'default' : 'outline'}
                 onClick={() => setUploadMode('url')}
-                className={uploadMode === 'url' ? 'bg-school-maroon hover:bg-school-maroon-dark' : ''}
-                disabled={isUploading}
+                className={uploadMode === 'url' ? 'bg-[#800000] hover:bg-[#9a0000]' : ''}
               >
-                <LinkIcon className="h-4 w-4 mr-2" />
                 External Link
               </Button>
             </div>
 
             {uploadMode === 'file' ? (
               <div className="space-y-2">
-                <Label htmlFor="video-file">Select Video File</Label>
+                <Label htmlFor="video-file" className="text-[#800000] font-semibold">
+                  Select Video File
+                </Label>
                 <Input
                   id="video-file"
                   type="file"
                   accept="video/*"
                   onChange={handleFileChange}
-                  className="cursor-pointer"
-                  disabled={isUploading}
+                  className="border-school-gold/30"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Supported formats: MP4, WebM, and other standard video formats. Auto-saves after selection.
-                </p>
+                {videoFile && (
+                  <p className="text-sm text-gray-600">
+                    Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="video-url">Video URL</Label>
+                <Label htmlFor="video-url" className="text-[#800000] font-semibold">
+                  Video URL
+                </Label>
                 <Input
                   id="video-url"
                   type="url"
-                  placeholder="Paste Google Drive, OneDrive, or Dropbox video link..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  disabled={isUploading}
+                  placeholder="Paste video URL (Google Drive, OneDrive, Dropbox, etc.)"
+                  className="border-school-gold/30"
                 />
-                {isValidating && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Validating...
-                  </div>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Paste a sharing link from Google Drive, OneDrive, or Dropbox. Auto-saves after validation.
-                </p>
               </div>
             )}
 
-            {uploadProgress > 0 && uploadProgress < 100 && (
+            {previewUrl && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Upload Progress</span>
-                  <span>{Math.round(uploadProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-school-maroon h-2.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
+                <Label className="text-[#800000] font-semibold">Current/Preview Video</Label>
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
+                  <video
+                    src={previewUrl}
+                    controls
+                    className="h-full w-full"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               </div>
             )}
@@ -340,74 +239,26 @@ export default function BNHSHymnManagementPage() {
               onClick={handleUpload}
               disabled={
                 isUploading ||
+                setHymnMutation.isPending ||
                 (uploadMode === 'file' && !videoFile) ||
-                (uploadMode === 'url' && (!videoUrl.trim() || isValidating))
+                (uploadMode === 'url' && !videoUrl.trim())
               }
-              className="w-full bg-school-maroon hover:bg-school-maroon-dark"
+              className="w-full bg-[#800000] hover:bg-[#9a0000] text-white"
             >
-              {isUploading ? (
+              {isUploading || setHymnMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Processing...'}
+                  {uploadProgress > 0 && uploadProgress < 100
+                    ? `Uploading... ${uploadProgress}%`
+                    : 'Saving...'}
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload Video (Manual Save)
+                  Upload BNHS Hymn Video
                 </>
               )}
             </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-school-gold/20 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-school-blue">Current BNHS Hymn Video</CardTitle>
-            <CardDescription>Preview of the currently uploaded video</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {videoLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-school-maroon" />
-              </div>
-            ) : previewUrl ? (
-              <div className="space-y-4">
-                <video
-                  controls
-                  playsInline
-                  className="w-full rounded-lg shadow-md"
-                  style={{ maxHeight: '400px', objectFit: 'contain' }}
-                  key={previewUrl}
-                >
-                  <source src={previewUrl} type="video/mp4" />
-                  Your browser does not support the video element.
-                </video>
-                {currentVideo && (
-                  <Button
-                    onClick={handleRemove}
-                    disabled={removeVideoMutation.isPending}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    {removeVideoMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Removing...
-                      </>
-                    ) : (
-                      'Remove Video'
-                    )}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-lg bg-muted p-12 text-center">
-                <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  No video uploaded yet. Upload a video file or paste an external link to get started.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

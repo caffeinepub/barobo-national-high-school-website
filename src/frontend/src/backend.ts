@@ -227,6 +227,11 @@ export interface AlumniProfile {
     achievements: string;
     currentPosition: string;
 }
+export interface SuperAdminStatus {
+    isInitialized: boolean;
+    superAdminPrincipal?: Principal;
+    isValid: boolean;
+}
 export interface SchoolHoursSection {
     id: bigint;
     content: string;
@@ -379,12 +384,14 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCitizenCharterBackground(): Promise<CitizenCharterBackground>;
-    getCitizenCharterBackgroundImage(timestamp: bigint): Promise<ExternalBlob | null>;
+    getCitizenCharterBackgroundImage(): Promise<ExternalBlob | null>;
+    getCitizenCharterBackgroundImageAdmin(timestamp: bigint): Promise<ExternalBlob | null>;
     getCitizenCharterBackgroundImageById(timestamp: bigint): Promise<ExternalBlob>;
     getCitizenCharterContactInfo(): Promise<CitizenCharterContactInfo>;
     getCitizenCharterStaticImage(): Promise<CitizenCharterStaticImage>;
     getCitizenCharterStaticImageById(timestamp: bigint): Promise<ExternalBlob>;
     getCitizenCharterStaticImageByTimestamp(timestamp: bigint): Promise<ExternalBlob | null>;
+    getCitizenCharterStaticImagePublic(): Promise<ExternalBlob | null>;
     getClubOrganization(id: bigint): Promise<ClubOrganization>;
     getClubOrganizations(): Promise<Array<ClubOrganization>>;
     getContactInfoSection(id: bigint): Promise<ContactInfoSection>;
@@ -406,6 +413,7 @@ export interface backendInterface {
     getSchoolHoursSection(id: bigint): Promise<SchoolHoursSection>;
     getSliderImage(id: bigint): Promise<SliderImage>;
     getStorageStats(): Promise<StorageStats>;
+    getSuperAdminStatus(): Promise<SuperAdminStatus>;
     getTotalVisitors(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVisitorAnalytics(): Promise<AnalyticsPeriod>;
@@ -451,7 +459,7 @@ export interface backendInterface {
     updateSchoolHoursSection(id: bigint, content: string): Promise<void>;
     updateSliderImage(id: bigint, image: SliderImageSource, title: string, description: string, displayOrder: bigint): Promise<void>;
 }
-import type { AdminPermission as _AdminPermission, AdminUserData as _AdminUserData, BNHSHymnContent as _BNHSHymnContent, BannerFileMetadata as _BannerFileMetadata, BannerImage as _BannerImage, BannerImageSource as _BannerImageSource, CitizenCharterBackground as _CitizenCharterBackground, CitizenCharterStaticImage as _CitizenCharterStaticImage, ExternalBlob as _ExternalBlob, FontStyle as _FontStyle, FormattedText as _FormattedText, HeritageSectionContent as _HeritageSectionContent, OrganizationalStructureContent as _OrganizationalStructureContent, SliderImage as _SliderImage, SliderImageSource as _SliderImageSource, TextAlignment as _TextAlignment, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { AdminPermission as _AdminPermission, AdminUserData as _AdminUserData, BNHSHymnContent as _BNHSHymnContent, BannerFileMetadata as _BannerFileMetadata, BannerImage as _BannerImage, BannerImageSource as _BannerImageSource, CitizenCharterBackground as _CitizenCharterBackground, CitizenCharterStaticImage as _CitizenCharterStaticImage, ExternalBlob as _ExternalBlob, FontStyle as _FontStyle, FormattedText as _FormattedText, HeritageSectionContent as _HeritageSectionContent, OrganizationalStructureContent as _OrganizationalStructureContent, SliderImage as _SliderImage, SliderImageSource as _SliderImageSource, SuperAdminStatus as _SuperAdminStatus, TextAlignment as _TextAlignment, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
@@ -1112,17 +1120,31 @@ export class Backend implements backendInterface {
             return from_candid_CitizenCharterBackground_n43(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getCitizenCharterBackgroundImage(arg0: bigint): Promise<ExternalBlob | null> {
+    async getCitizenCharterBackgroundImage(): Promise<ExternalBlob | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCitizenCharterBackgroundImage(arg0);
+                const result = await this.actor.getCitizenCharterBackgroundImage();
                 return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCitizenCharterBackgroundImage(arg0);
+            const result = await this.actor.getCitizenCharterBackgroundImage();
+            return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getCitizenCharterBackgroundImageAdmin(arg0: bigint): Promise<ExternalBlob | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCitizenCharterBackgroundImageAdmin(arg0);
+                return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCitizenCharterBackgroundImageAdmin(arg0);
             return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -1193,6 +1215,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getCitizenCharterStaticImageByTimestamp(arg0);
+            return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getCitizenCharterStaticImagePublic(): Promise<ExternalBlob | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCitizenCharterStaticImagePublic();
+                return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCitizenCharterStaticImagePublic();
             return from_candid_opt_n45(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -1488,6 +1524,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getStorageStats();
             return result;
+        }
+    }
+    async getSuperAdminStatus(): Promise<SuperAdminStatus> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSuperAdminStatus();
+                return from_candid_SuperAdminStatus_n58(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSuperAdminStatus();
+            return from_candid_SuperAdminStatus_n58(this._uploadFile, this._downloadFile, result);
         }
     }
     async getTotalVisitors(): Promise<bigint> {
@@ -2053,14 +2103,14 @@ export class Backend implements backendInterface {
     async updateHeritageSection(arg0: string, arg1: FormattedText): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateHeritageSection(arg0, to_candid_FormattedText_n58(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.updateHeritageSection(arg0, to_candid_FormattedText_n61(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateHeritageSection(arg0, to_candid_FormattedText_n58(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.updateHeritageSection(arg0, to_candid_FormattedText_n61(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -2152,6 +2202,9 @@ async function from_candid_SliderImageSource_n37(_uploadFile: (file: ExternalBlo
 async function from_candid_SliderImage_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _SliderImage): Promise<SliderImage> {
     return await from_candid_record_n36(_uploadFile, _downloadFile, value);
 }
+function from_candid_SuperAdminStatus_n58(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _SuperAdminStatus): SuperAdminStatus {
+    return from_candid_record_n59(_uploadFile, _downloadFile, value);
+}
 function from_candid_TextAlignment_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TextAlignment): TextAlignment {
     return from_candid_variant_n55(_uploadFile, _downloadFile, value);
 }
@@ -2171,6 +2224,9 @@ async function from_candid_opt_n45(_uploadFile: (file: ExternalBlob) => Promise<
     return value.length === 0 ? null : await from_candid_ExternalBlob_n19(_uploadFile, _downloadFile, value[0]);
 }
 function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n60(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Principal]): Principal | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
@@ -2371,6 +2427,21 @@ async function from_candid_record_n57(_uploadFile: (file: ExternalBlob) => Promi
         staticImage: record_opt_to_undefined(await from_candid_opt_n45(_uploadFile, _downloadFile, value.staticImage))
     };
 }
+function from_candid_record_n59(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    isInitialized: boolean;
+    superAdminPrincipal: [] | [Principal];
+    isValid: boolean;
+}): {
+    isInitialized: boolean;
+    superAdminPrincipal?: Principal;
+    isValid: boolean;
+} {
+    return {
+        isInitialized: value.isInitialized,
+        superAdminPrincipal: record_opt_to_undefined(from_candid_opt_n60(_uploadFile, _downloadFile, value.superAdminPrincipal)),
+        isValid: value.isValid
+    };
+}
 async function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     url: string;
 } | {
@@ -2466,17 +2537,17 @@ async function to_candid_BannerImageSource_n8(_uploadFile: (file: ExternalBlob) 
 async function to_candid_ExternalBlob_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ExternalBlob): Promise<_ExternalBlob> {
     return await _uploadFile(value);
 }
-function to_candid_FontStyle_n60(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FontStyle): _FontStyle {
-    return to_candid_variant_n61(_uploadFile, _downloadFile, value);
+function to_candid_FontStyle_n63(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FontStyle): _FontStyle {
+    return to_candid_variant_n64(_uploadFile, _downloadFile, value);
 }
-function to_candid_FormattedText_n58(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FormattedText): _FormattedText {
-    return to_candid_record_n59(_uploadFile, _downloadFile, value);
+function to_candid_FormattedText_n61(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FormattedText): _FormattedText {
+    return to_candid_record_n62(_uploadFile, _downloadFile, value);
 }
 async function to_candid_SliderImageSource_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: SliderImageSource): Promise<_SliderImageSource> {
     return await to_candid_variant_n9(_uploadFile, _downloadFile, value);
 }
-function to_candid_TextAlignment_n62(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TextAlignment): _TextAlignment {
-    return to_candid_variant_n63(_uploadFile, _downloadFile, value);
+function to_candid_TextAlignment_n65(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TextAlignment): _TextAlignment {
+    return to_candid_variant_n66(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n22(_uploadFile, _downloadFile, value);
@@ -2511,7 +2582,7 @@ function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         proposed_top_up_amount: value.proposed_top_up_amount ? candid_some(value.proposed_top_up_amount) : candid_none()
     };
 }
-function to_candid_record_n59(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n62(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     content: string;
     fontStyle: FontStyle;
     fontSize: number;
@@ -2524,9 +2595,9 @@ function to_candid_record_n59(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 } {
     return {
         content: value.content,
-        fontStyle: to_candid_FontStyle_n60(_uploadFile, _downloadFile, value.fontStyle),
+        fontStyle: to_candid_FontStyle_n63(_uploadFile, _downloadFile, value.fontStyle),
         fontSize: value.fontSize,
-        alignment: to_candid_TextAlignment_n62(_uploadFile, _downloadFile, value.alignment)
+        alignment: to_candid_TextAlignment_n65(_uploadFile, _downloadFile, value.alignment)
     };
 }
 function to_candid_variant_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
@@ -2583,7 +2654,7 @@ function to_candid_variant_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint
         ManageClubs: null
     } : value;
 }
-function to_candid_variant_n61(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FontStyle): {
+function to_candid_variant_n64(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: FontStyle): {
     italic: null;
 } | {
     normal: null;
@@ -2602,7 +2673,7 @@ function to_candid_variant_n61(_uploadFile: (file: ExternalBlob) => Promise<Uint
         underline: null
     } : value;
 }
-function to_candid_variant_n63(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TextAlignment): {
+function to_candid_variant_n66(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TextAlignment): {
     center: null;
 } | {
     left: null;

@@ -191,6 +191,11 @@ export interface StorageStats {
   'availableSpace' : bigint,
   'totalCapacity' : bigint,
 }
+export interface SuperAdminStatus {
+  'isInitialized' : boolean,
+  'superAdminPrincipal' : [] | [Principal],
+  'isValid' : boolean,
+}
 export type TextAlignment = { 'center' : null } |
   { 'left' : null } |
   { 'justify' : null } |
@@ -298,7 +303,8 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCitizenCharterBackground' : ActorMethod<[], CitizenCharterBackground>,
-  'getCitizenCharterBackgroundImage' : ActorMethod<
+  'getCitizenCharterBackgroundImage' : ActorMethod<[], [] | [ExternalBlob]>,
+  'getCitizenCharterBackgroundImageAdmin' : ActorMethod<
     [bigint],
     [] | [ExternalBlob]
   >,
@@ -310,6 +316,7 @@ export interface _SERVICE {
     [bigint],
     [] | [ExternalBlob]
   >,
+  'getCitizenCharterStaticImagePublic' : ActorMethod<[], [] | [ExternalBlob]>,
   'getClubOrganization' : ActorMethod<[bigint], ClubOrganization>,
   'getClubOrganizations' : ActorMethod<[], Array<ClubOrganization>>,
   'getContactInfoSection' : ActorMethod<[bigint], ContactInfoSection>,
@@ -334,6 +341,7 @@ export interface _SERVICE {
   'getSchoolHoursSection' : ActorMethod<[bigint], SchoolHoursSection>,
   'getSliderImage' : ActorMethod<[bigint], SliderImage>,
   'getStorageStats' : ActorMethod<[], StorageStats>,
+  'getSuperAdminStatus' : ActorMethod<[], SuperAdminStatus>,
   'getTotalVisitors' : ActorMethod<[], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVisitorAnalytics' : ActorMethod<[], AnalyticsPeriod>,

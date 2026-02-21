@@ -9,6 +9,12 @@
     --school-gold: oklch(0.75 0.15 85);
     --school-white: oklch(1 0 0);
     
+    /* Citizen Charter specific colors */
+    --charter-green: oklch(0.55 0.15 145);
+    --charter-green-dark: oklch(0.45 0.15 145);
+    --charter-sky-blue: oklch(0.65 0.12 230);
+    --charter-sky-blue-dark: oklch(0.55 0.12 230);
+    
     --background: oklch(1 0 0);
     --foreground: oklch(0.15 0 0);
     --card: oklch(1 0 0);
@@ -61,6 +67,12 @@
     --chart-3: oklch(0.65 0.15 145);
     --chart-4: oklch(0.80 0.12 265);
     --chart-5: oklch(0.70 0.18 15);
+    
+    /* Citizen Charter specific colors - dark mode */
+    --charter-green: oklch(0.60 0.15 145);
+    --charter-green-dark: oklch(0.50 0.15 145);
+    --charter-sky-blue: oklch(0.70 0.12 230);
+    --charter-sky-blue-dark: oklch(0.60 0.12 230);
   }
 }
 
@@ -206,4 +218,25 @@
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+/* Blink animation for text */
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0.3;
+  }
+}
+
+.animate-blink {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-blink {
+    animation: none;
+  }
 }

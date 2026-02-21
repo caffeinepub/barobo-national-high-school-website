@@ -223,6 +223,11 @@ export const StorageStats = IDL.Record({
   'availableSpace' : IDL.Nat,
   'totalCapacity' : IDL.Nat,
 });
+export const SuperAdminStatus = IDL.Record({
+  'isInitialized' : IDL.Bool,
+  'superAdminPrincipal' : IDL.Opt(IDL.Principal),
+  'isValid' : IDL.Bool,
+});
 export const Header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
 export const http_header = IDL.Record({
   'value' : IDL.Text,
@@ -352,6 +357,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getCitizenCharterBackgroundImage' : IDL.Func(
+      [],
+      [IDL.Opt(ExternalBlob)],
+      ['query'],
+    ),
+  'getCitizenCharterBackgroundImageAdmin' : IDL.Func(
       [IDL.Int],
       [IDL.Opt(ExternalBlob)],
       ['query'],
@@ -378,6 +388,11 @@ export const idlService = IDL.Service({
     ),
   'getCitizenCharterStaticImageByTimestamp' : IDL.Func(
       [IDL.Int],
+      [IDL.Opt(ExternalBlob)],
+      ['query'],
+    ),
+  'getCitizenCharterStaticImagePublic' : IDL.Func(
+      [],
       [IDL.Opt(ExternalBlob)],
       ['query'],
     ),
@@ -434,6 +449,7 @@ export const idlService = IDL.Service({
     ),
   'getSliderImage' : IDL.Func([IDL.Nat], [SliderImage], ['query']),
   'getStorageStats' : IDL.Func([], [StorageStats], ['query']),
+  'getSuperAdminStatus' : IDL.Func([], [SuperAdminStatus], ['query']),
   'getTotalVisitors' : IDL.Func([], [IDL.Nat], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -730,6 +746,11 @@ export const idlFactory = ({ IDL }) => {
     'availableSpace' : IDL.Nat,
     'totalCapacity' : IDL.Nat,
   });
+  const SuperAdminStatus = IDL.Record({
+    'isInitialized' : IDL.Bool,
+    'superAdminPrincipal' : IDL.Opt(IDL.Principal),
+    'isValid' : IDL.Bool,
+  });
   const Header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_request_result = IDL.Record({
@@ -860,6 +881,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getCitizenCharterBackgroundImage' : IDL.Func(
+        [],
+        [IDL.Opt(ExternalBlob)],
+        ['query'],
+      ),
+    'getCitizenCharterBackgroundImageAdmin' : IDL.Func(
         [IDL.Int],
         [IDL.Opt(ExternalBlob)],
         ['query'],
@@ -886,6 +912,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getCitizenCharterStaticImageByTimestamp' : IDL.Func(
         [IDL.Int],
+        [IDL.Opt(ExternalBlob)],
+        ['query'],
+      ),
+    'getCitizenCharterStaticImagePublic' : IDL.Func(
+        [],
         [IDL.Opt(ExternalBlob)],
         ['query'],
       ),
@@ -946,6 +977,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getSliderImage' : IDL.Func([IDL.Nat], [SliderImage], ['query']),
     'getStorageStats' : IDL.Func([], [StorageStats], ['query']),
+    'getSuperAdminStatus' : IDL.Func([], [SuperAdminStatus], ['query']),
     'getTotalVisitors' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],

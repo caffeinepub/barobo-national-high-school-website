@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { ExternalBlob, BannerImage, BannerFileMetadata, SliderImage, HeritageSectionContent, FormattedText, CitizenCharterBackground, CitizenCharterStaticImage, AlumniContent, AlumniProfile, AdminUserData, AdminPermission, UserProfile, AnalyticsPeriod, LoginRecord, StorageStats, FileTypeBreakdown, ContactInfoSection, OfficeHoursSection, SchoolHoursSection, DepEdMissionContent, OrganizationalStructureContent } from '../backend';
+import { ExternalBlob, BannerImage, BannerFileMetadata, SliderImage, HeritageSectionContent, FormattedText, CitizenCharterBackground, CitizenCharterStaticImage, AlumniContent, AlumniProfile, AdminUserData, AdminPermission, UserProfile, AnalyticsPeriod, LoginRecord, StorageStats, FileTypeBreakdown, ContactInfoSection, OfficeHoursSection, SchoolHoursSection, DepEdMissionContent, OrganizationalStructureContent, SuperAdminStatus } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 
 type CalendarEvent = {
@@ -99,6 +99,48 @@ export function useGetCallerPermissions() {
     },
     enabled: !!actor && !isFetching,
     retry: false,
+  });
+}
+
+// Super Admin Status Query
+export function useGetSuperAdminStatus() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<SuperAdminStatus>({
+    queryKey: ['superAdminStatus'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getSuperAdminStatus();
+    },
+    enabled: !!actor && !isFetching,
+    retry: false,
+  });
+}
+
+// Initialize Super Admin (auto-initialization)
+export function useInitializeSuperAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.initializeSuperAdmin();
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch all related queries
+      await queryClient.invalidateQueries({ queryKey: ['superAdminStatus'] });
+      await queryClient.invalidateQueries({ queryKey: ['callerRole'] });
+      await queryClient.invalidateQueries({ queryKey: ['callerPermissions'] });
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['superAdminStatus'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['callerRole'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['callerPermissions'], type: 'active' }),
+      ]);
+    },
   });
 }
 
@@ -570,11 +612,10 @@ export function useGetSliderImages() {
       }
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 5000,
+    gcTime: 10000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    refetchInterval: 5000,
   });
 }
 
@@ -584,27 +625,60 @@ export function useAddSliderImage() {
 
   return useMutation({
     mutationFn: async ({
-      image,
+      file,
+      title,
+      description,
+      isAnimated,
+    }: {
+      file: ExternalBlob;
+      title: string;
+      description: string;
+      isAnimated: boolean;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      const sliderFile: BannerFileMetadata = {
+        id: BigInt(0),
+        file,
+        isAnimated,
+      };
+
+      return actor.addSliderImage(
+        { __kind__: 'file', file: sliderFile },
+        title,
+        description
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sliderImages'] });
+    },
+  });
+}
+
+export function useAddSliderImageFromURL() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      url,
       title,
       description,
     }: {
-      image: { __kind__: 'file'; file: BannerFileMetadata } | { __kind__: 'url'; url: string };
+      url: string;
       title: string;
       description: string;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addSliderImage(image, title, description);
+      
+      return actor.addSliderImage(
+        { __kind__: 'url', url },
+        title,
+        description
+      );
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sliderImages'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['sliderImages'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Slider image add error:', error);
-      throw error;
     },
   });
 }
@@ -616,27 +690,37 @@ export function useUpdateSliderImage() {
   return useMutation({
     mutationFn: async ({
       id,
-      image,
+      file,
       title,
       description,
       displayOrder,
+      isAnimated,
     }: {
       id: bigint;
-      image: { __kind__: 'file'; file: BannerFileMetadata } | { __kind__: 'url'; url: string };
+      file: ExternalBlob;
       title: string;
       description: string;
       displayOrder: bigint;
+      isAnimated: boolean;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateSliderImage(id, image, title, description, displayOrder);
+      
+      const sliderFile: BannerFileMetadata = {
+        id: BigInt(0),
+        file,
+        isAnimated,
+      };
+
+      await actor.updateSliderImage(
+        id,
+        { __kind__: 'file', file: sliderFile },
+        title,
+        description,
+        displayOrder
+      );
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sliderImages'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['sliderImages'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Slider image update error:', error);
     },
   });
 }
@@ -648,38 +732,32 @@ export function useDeleteSliderImage() {
   return useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteSliderImage(id);
+      await actor.deleteSliderImage(id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sliderImages'] });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      await queryClient.refetchQueries({ queryKey: ['sliderImages'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Slider image delete error:', error);
     },
   });
 }
 
-export function useGetHistoryContent() {
+export function useGetHeritageSection() {
   const { actor, isFetching } = useActor();
 
   return useQuery<HeritageSectionContent>({
-    queryKey: ['historyContent'],
+    queryKey: ['heritageSection'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getHeritageSection();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
+    retry: false,
   });
 }
 
-export function useUpdateHistoryContent() {
+// Alias for backward compatibility
+export const useGetHistoryContent = useGetHeritageSection;
+
+export function useUpdateHeritageSection() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
@@ -694,21 +772,16 @@ export function useUpdateHistoryContent() {
       if (!actor) throw new Error('Actor not available');
       await actor.updateHeritageSection(title, formattedText);
     },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['historyContent'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['historyContent'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('History content update error:', error);
-      throw error;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['heritageSection'] });
     },
   });
 }
 
-export function useUpdateHistoryBackgroundImage() {
+// Alias for backward compatibility
+export const useUpdateHistoryContent = useUpdateHeritageSection;
+
+export function useSetHistoryBackgroundImage() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
@@ -717,44 +790,14 @@ export function useUpdateHistoryBackgroundImage() {
       if (!actor) throw new Error('Actor not available');
       await actor.setHistoryBackgroundImage(backgroundImage);
     },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['historyContent'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['historyContent'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('History background update error:', error);
-      throw error;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['heritageSection'] });
     },
   });
 }
 
-export function useUpdateOrgChartBackground() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (orgChartBackground: ExternalBlob) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.setOrganizationalChartBackground(orgChartBackground);
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['historyContent'] });
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['historyContent'], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org chart background update error:', error);
-      throw error;
-    },
-  });
-}
+// Alias for backward compatibility
+export const useUpdateHistoryBackgroundImage = useSetHistoryBackgroundImage;
 
 export function useRemoveHistoryBackgroundImage() {
   const { actor } = useActor();
@@ -765,20 +808,127 @@ export function useRemoveHistoryBackgroundImage() {
       if (!actor) throw new Error('Actor not available');
       await actor.removeHistoryBackgroundImage();
     },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['historyContent'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['historyContent'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('History background removal error:', error);
-      throw error;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['heritageSection'] });
     },
   });
 }
 
+export function useGetOrganizationalStructure() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<OrganizationalStructureContent>({
+    queryKey: ['organizationalStructure'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getOrganizationalStructure();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useUpdateOrganizationalStructureTitleBackground() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (titleBackground: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setOrganizationalStructureTitleBackground(titleBackground);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+    },
+  });
+}
+
+export function useRemoveOrganizationalStructureTitleBackground() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.removeOrganizationalStructureTitleBackground();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+    },
+  });
+}
+
+export function useUpdateOrganizationalStructureStaticImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (staticImage: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setOrganizationalStructureStaticImage(staticImage);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+    },
+  });
+}
+
+export function useRemoveOrganizationalStructureStaticImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.removeOrganizationalStructureStaticImage();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
+    },
+  });
+}
+
+// Citizen Charter - Public queries for background and static images
+export function useGetCitizenCharterBackgroundPublic() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<ExternalBlob | null>({
+    queryKey: ['citizenCharterBackgroundPublic'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        return await actor.getCitizenCharterBackgroundImage();
+      } catch (error: any) {
+        console.error('Error fetching Citizen Charter background:', error);
+        return null;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 5000,
+    refetchOnMount: 'always',
+  });
+}
+
+export function useGetCitizenCharterStaticImagePublic() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<ExternalBlob | null>({
+    queryKey: ['citizenCharterStaticImagePublic'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        return await actor.getCitizenCharterStaticImagePublic();
+      } catch (error: any) {
+        console.error('Error fetching Citizen Charter static image:', error);
+        return null;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 5000,
+    refetchOnMount: 'always',
+  });
+}
+
+// Citizen Charter - Admin queries
 export function useGetCitizenCharterBackground() {
   const { actor, isFetching } = useActor();
 
@@ -789,18 +939,10 @@ export function useGetCitizenCharterBackground() {
       try {
         return await actor.getCitizenCharterBackground();
       } catch (error: any) {
-        if (error.message?.includes('No background found')) {
-          return null;
-        }
-        throw error;
+        return null;
       }
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
   });
 }
 
@@ -813,16 +955,9 @@ export function useUpdateCitizenCharterBackground() {
       if (!actor) throw new Error('Actor not available');
       await actor.setCitizenCharterBackgroundImage(backgroundImage);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['citizenCharterBackground'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterBackground'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Citizen Charter background update error:', error);
-      throw error;
+      queryClient.invalidateQueries({ queryKey: ['citizenCharterBackgroundPublic'] });
     },
   });
 }
@@ -836,16 +971,9 @@ export function useRemoveCitizenCharterBackground() {
       if (!actor) throw new Error('Actor not available');
       await actor.removeCitizenCharterBackgroundImage();
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['citizenCharterBackground'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterBackground'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Citizen Charter background removal error:', error);
-      throw error;
+      queryClient.invalidateQueries({ queryKey: ['citizenCharterBackgroundPublic'] });
     },
   });
 }
@@ -860,18 +988,10 @@ export function useGetCitizenCharterStaticImage() {
       try {
         return await actor.getCitizenCharterStaticImage();
       } catch (error: any) {
-        if (error.message?.includes('No static image found')) {
-          return null;
-        }
-        throw error;
+        return null;
       }
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
   });
 }
 
@@ -884,16 +1004,9 @@ export function useUpdateCitizenCharterStaticImage() {
       if (!actor) throw new Error('Actor not available');
       await actor.setCitizenCharterStaticImage(staticImage);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['citizenCharterStaticImage'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterStaticImage'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Citizen Charter static image update error:', error);
-      throw error;
+      queryClient.invalidateQueries({ queryKey: ['citizenCharterStaticImagePublic'] });
     },
   });
 }
@@ -907,20 +1020,14 @@ export function useRemoveCitizenCharterStaticImage() {
       if (!actor) throw new Error('Actor not available');
       await actor.removeCitizenCharterStaticImage();
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['citizenCharterStaticImage'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['citizenCharterStaticImage'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Citizen Charter static image removal error:', error);
-      throw error;
+      queryClient.invalidateQueries({ queryKey: ['citizenCharterStaticImagePublic'] });
     },
   });
 }
 
+// Contact Info Sections
 export function useGetContactInfoSections() {
   const { actor, isFetching } = useActor();
 
@@ -931,10 +1038,6 @@ export function useGetContactInfoSections() {
       return actor.getAllContactInfoSections();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
   });
 }
 
@@ -983,6 +1086,7 @@ export function useDeleteContactInfoSection() {
   });
 }
 
+// Office Hours Sections
 export function useGetOfficeHoursSections() {
   const { actor, isFetching } = useActor();
 
@@ -993,10 +1097,6 @@ export function useGetOfficeHoursSections() {
       return actor.getAllOfficeHoursSections();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
   });
 }
 
@@ -1045,6 +1145,7 @@ export function useDeleteOfficeHoursSection() {
   });
 }
 
+// School Hours Sections
 export function useGetSchoolHoursSections() {
   const { actor, isFetching } = useActor();
 
@@ -1055,10 +1156,6 @@ export function useGetSchoolHoursSections() {
       return actor.getAllSchoolHoursSections();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
   });
 }
 
@@ -1107,28 +1204,18 @@ export function useDeleteSchoolHoursSection() {
   });
 }
 
+// Alumni Management
 export function useGetAlumniContent() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<AlumniContent | null>({
+  return useQuery<AlumniContent>({
     queryKey: ['alumniContent'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      try {
-        return await actor.getAlumniContent();
-      } catch (error: any) {
-        if (error.message?.includes('No Alumni content found')) {
-          return null;
-        }
-        throw error;
-      }
+      return actor.getAlumniContent();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
+    retry: false,
   });
 }
 
@@ -1155,7 +1242,7 @@ export function useUpdateAlumniContent() {
   });
 }
 
-export function useGetAlumniProfiles() {
+export function useGetAllAlumniProfiles() {
   const { actor, isFetching } = useActor();
 
   return useQuery<AlumniProfile[]>({
@@ -1165,12 +1252,11 @@ export function useGetAlumniProfiles() {
       return actor.getAllAlumniProfiles();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
   });
 }
+
+// Alias for backward compatibility
+export const useGetAlumniProfiles = useGetAllAlumniProfiles;
 
 export function useCreateAlumniProfile() {
   const { actor } = useActor();
@@ -1239,28 +1325,22 @@ export function useDeleteAlumniProfile() {
   });
 }
 
+// BNHS Hymn Video
 export function useGetBNHSHymnVideo() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<ExternalBlob | null>({
+  return useQuery<ExternalBlob>({
     queryKey: ['bnhsHymnVideo'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      try {
-        return await actor.getBNHSHymnVideo();
-      } catch (error: any) {
-        if (error.message?.includes('BNHS Hymn video not found')) {
-          return null;
-        }
-        throw error;
-      }
+      return actor.getBNHSHymnVideo();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
+    retry: false,
+    staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -1273,16 +1353,8 @@ export function useSetBNHSHymn() {
       if (!actor) throw new Error('Actor not available');
       await actor.setBNHSHymn(videoFile);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bnhsHymnVideo'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['bnhsHymnVideo'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('BNHS Hymn update error:', error);
-      throw error;
     },
   });
 }
@@ -1298,140 +1370,6 @@ export function useRemoveBNHSHymn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bnhsHymnVideo'] });
-    },
-  });
-}
-
-export function useGetDepEdMission() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<DepEdMissionContent | null>({
-    queryKey: ['depedMission'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      try {
-        return await actor.getDepEdMission();
-      } catch (error: any) {
-        if (error.message?.includes('DepEd Mission content not found')) {
-          return null;
-        }
-        throw error;
-      }
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
-  });
-}
-
-export function useGetOrganizationalStructure() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<OrganizationalStructureContent>({
-    queryKey: ['organizationalStructure'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getOrganizationalStructure();
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-}
-
-export function useUpdateOrgStructureTitleBackground() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (titleBackground: ExternalBlob) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.setOrganizationalStructureTitleBackground(titleBackground);
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure title background update error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useUpdateOrgStructureStaticImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (staticImage: ExternalBlob) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.setOrganizationalStructureStaticImage(staticImage);
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure static image update error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useRemoveOrgStructureTitleBackground() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.removeOrganizationalStructureTitleBackground();
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure title background removal error:', error);
-      throw error;
-    },
-  });
-}
-
-export function useRemoveOrgStructureStaticImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.removeOrganizationalStructureStaticImage();
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationalStructure'] });
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await queryClient.refetchQueries({ queryKey: ['organizationalStructure'], type: 'active' });
-    },
-    onError: (error: any) => {
-      console.error('Org structure static image removal error:', error);
-      throw error;
     },
   });
 }

@@ -145,6 +145,11 @@ export interface AlumniProfile {
     achievements: string;
     currentPosition: string;
 }
+export interface SuperAdminStatus {
+    isInitialized: boolean;
+    superAdminPrincipal?: Principal;
+    isValid: boolean;
+}
 export interface SchoolHoursSection {
     id: bigint;
     content: string;
@@ -286,12 +291,14 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCitizenCharterBackground(): Promise<CitizenCharterBackground>;
-    getCitizenCharterBackgroundImage(timestamp: bigint): Promise<ExternalBlob | null>;
+    getCitizenCharterBackgroundImage(): Promise<ExternalBlob | null>;
+    getCitizenCharterBackgroundImageAdmin(timestamp: bigint): Promise<ExternalBlob | null>;
     getCitizenCharterBackgroundImageById(timestamp: bigint): Promise<ExternalBlob>;
     getCitizenCharterContactInfo(): Promise<CitizenCharterContactInfo>;
     getCitizenCharterStaticImage(): Promise<CitizenCharterStaticImage>;
     getCitizenCharterStaticImageById(timestamp: bigint): Promise<ExternalBlob>;
     getCitizenCharterStaticImageByTimestamp(timestamp: bigint): Promise<ExternalBlob | null>;
+    getCitizenCharterStaticImagePublic(): Promise<ExternalBlob | null>;
     getClubOrganization(id: bigint): Promise<ClubOrganization>;
     getClubOrganizations(): Promise<Array<ClubOrganization>>;
     getContactInfoSection(id: bigint): Promise<ContactInfoSection>;
@@ -313,6 +320,7 @@ export interface backendInterface {
     getSchoolHoursSection(id: bigint): Promise<SchoolHoursSection>;
     getSliderImage(id: bigint): Promise<SliderImage>;
     getStorageStats(): Promise<StorageStats>;
+    getSuperAdminStatus(): Promise<SuperAdminStatus>;
     getTotalVisitors(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVisitorAnalytics(): Promise<AnalyticsPeriod>;

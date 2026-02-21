@@ -1,20 +1,47 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useActor } from '../hooks/useActor';
 import PhilippineTimeClock from '../components/PhilippineTimeClock';
 import WeatherForecastSection from '../components/WeatherForecastSection';
 import FacebookPresenceBlock from '../components/FacebookPresenceBlock';
 import SchoolActivitiesSlider from '../components/SchoolActivitiesSlider';
-import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2, Users } from 'lucide-react';
-import { useGetBNHSHymnVideo } from '../hooks/useQueries';
+import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollText, Loader2, Users, Volume2, MapPin, Clock, School } from 'lucide-react';
+import { useGetBNHSHymnVideo, useGetCitizenCharterBackgroundPublic, useGetCitizenCharterStaticImagePublic } from '../hooks/useQueries';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function HomePage() {
   const { actor } = useActor();
   const { data: hymnVideo, isLoading: hymnLoading } = useGetBNHSHymnVideo();
+  const { data: citizenCharterBackground } = useGetCitizenCharterBackgroundPublic();
+  const { data: citizenCharterStaticImage } = useGetCitizenCharterStaticImagePublic();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
+  const [hasAttemptedAutoplay, setHasAttemptedAutoplay] = useState(false);
+  const [autoplayFailed, setAutoplayFailed] = useState(false);
   const weatherRef = useRef<HTMLDivElement>(null);
   const [weatherHeight, setWeatherHeight] = useState<number | undefined>(undefined);
+  const [backgroundImageError, setBackgroundImageError] = useState(false);
+  const [staticImageError, setStaticImageError] = useState(false);
+
+  // Memoize the hymn video URL to prevent src changes during playback
+  // Only changes when the underlying blob object identity changes
+  const hymnVideoUrl = useMemo(() => {
+    if (!hymnVideo) return null;
+    return hymnVideo.getDirectURL();
+  }, [hymnVideo]);
+
+  // Memoize Citizen Charter images with cache-busting
+  const citizenCharterBackgroundUrl = useMemo(() => {
+    if (!citizenCharterBackground) return null;
+    const baseUrl = citizenCharterBackground.getDirectURL();
+    return `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  }, [citizenCharterBackground]);
+
+  const citizenCharterStaticImageUrl = useMemo(() => {
+    if (!citizenCharterStaticImage) return null;
+    const baseUrl = citizenCharterStaticImage.getDirectURL();
+    return `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  }, [citizenCharterStaticImage]);
 
   const { data: totalVisitors } = useQuery({
     queryKey: ['totalVisitors'],
@@ -104,31 +131,33 @@ export default function HomePage() {
     };
   }, []);
 
-  // Delayed autoplay effect for BNHS Hymn video
+  // Single deterministic autoplay attempt for BNHS Hymn video
+  // Only runs once per page load when video URL becomes available
   useEffect(() => {
-    if (!hymnVideo || !videoRef.current || hasAutoPlayed) return;
+    if (!hymnVideoUrl || !videoRef.current || hasAttemptedAutoplay) return;
 
     const autoplayTimer = setTimeout(() => {
       if (videoRef.current) {
-        // Ensure video is not muted and attempt to play
+        // Mark that we've attempted autoplay to prevent repeated attempts
+        setHasAttemptedAutoplay(true);
+        
+        // Attempt to play with sound
         videoRef.current.muted = false;
-        videoRef.current.play().then(() => {
-          setHasAutoPlayed(true);
-        }).catch((error) => {
-          // If autoplay with sound fails (browser policy), try muted autoplay as fallback
-          console.warn('Autoplay with sound blocked, attempting muted autoplay:', error);
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play().catch((err) => {
-              console.error('Autoplay failed:', err);
-            });
-          }
-        });
+        videoRef.current.play()
+          .then(() => {
+            // Autoplay with sound succeeded
+            setAutoplayFailed(false);
+          })
+          .catch((error) => {
+            console.warn('Autoplay with sound blocked by browser:', error);
+            // Show user message instead of trying muted autoplay
+            setAutoplayFailed(true);
+          });
       }
     }, 3000); // 3-second delay
 
     return () => clearTimeout(autoplayTimer);
-  }, [hymnVideo, hasAutoPlayed]);
+  }, [hymnVideoUrl, hasAttemptedAutoplay]);
 
   const formatVisionText = (text: string) => {
     return text.split('\n').map((line, index) => (
@@ -268,6 +297,110 @@ export default function HomePage() {
           <SchoolActivitiesSlider />
         </section>
 
+        {/* Citizen Charter Section */}
+        {(citizenCharterBackgroundUrl || citizenCharterStaticImageUrl) && (
+          <section className="mb-12">
+            <div
+              className="relative rounded-lg overflow-hidden shadow-md"
+              style={
+                citizenCharterBackgroundUrl && !backgroundImageError
+                  ? {
+                      backgroundImage: `linear-gradient(rgba(128, 0, 0, 0.7), rgba(128, 0, 0, 0.7)), url(${citizenCharterBackgroundUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }
+                  : { backgroundColor: '#800000' }
+              }
+            >
+              {citizenCharterBackgroundUrl && (
+                <img
+                  src={citizenCharterBackgroundUrl}
+                  alt=""
+                  className="hidden"
+                  onError={() => setBackgroundImageError(true)}
+                />
+              )}
+              <div className="p-8 text-white">
+                <h2 className="mb-4 text-center text-3xl font-bold">Citizen's Charter</h2>
+                <p className="text-center text-lg mb-6">School Contact Information and Service Hours</p>
+                
+                {citizenCharterStaticImageUrl && !staticImageError && (
+                  <div className="mb-6 mx-auto max-w-5xl">
+                    <img
+                      src={citizenCharterStaticImageUrl}
+                      alt="Citizen Charter Information"
+                      className="w-full h-auto rounded-lg shadow-lg"
+                      onError={() => setStaticImageError(true)}
+                    />
+                  </div>
+                )}
+
+                <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
+                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 text-white">
+                        <MapPin className="h-6 w-6" />
+                        <CardTitle className="text-white">Contact Information</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-white/90">
+                      <p className="text-sm">
+                        Barobo National High School<br />
+                        Purok 1B Townsite, Poblacion<br />
+                        Barobo, Surigao del Sur<br />
+                        Philippines 8309<br />
+                        <br />
+                        Phone: (086) 850 - 0113 (JHS)<br />
+                        (086) 850 - 0547 (SHS)<br />
+                        Email: 304861@deped.gov.ph
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 text-white">
+                        <Clock className="h-6 w-6" />
+                        <CardTitle className="text-white">Office Hours</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-white/90">
+                      <p className="text-sm">
+                        Monday - Friday<br />
+                        8:00 A.M. - 12:00 P.M. (Morning)<br />
+                        1:00 P.M. - 5:00 P.M. (Afternoon)<br />
+                        <br />
+                        Saturday - Sunday<br />
+                        Closed
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 text-white">
+                        <School className="h-6 w-6" />
+                        <CardTitle className="text-white">School Hours</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-white/90">
+                      <p className="text-sm">
+                        <strong>JHS:</strong> Mon-Fri<br />
+                        7:15 A.M. - 5:00 P.M.<br />
+                        <br />
+                        <strong>SHS:</strong> Mon-Fri<br />
+                        7:30 A.M. - 5:00 P.M.<br />
+                        <br />
+                        Sat-Sun: Closed
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
           <h2 className="mb-8 text-center text-3xl font-bold text-[#800000]">
             DepEd Vision, Mission, Core Values, and Mandates
@@ -357,6 +490,34 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* BNHS Hymn Section */}
+        {hymnVideoUrl && (
+          <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
+            <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
+            {autoplayFailed && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Volume2 className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  Click the play button below to start the BNHS Hymn video with sound.
+                </AlertDescription>
+              </Alert>
+            )}
+            <div className="mx-auto max-w-4xl">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
+                <video
+                  ref={videoRef}
+                  src={hymnVideoUrl}
+                  controls
+                  className="h-full w-full"
+                  playsInline
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          </section>
+        )}
+
         <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">
           {depedVision?.bnhsStatisticalBulletinTitle || 'Barobo National High School Statistical Bulletin'}
         </h2>
@@ -372,107 +533,145 @@ export default function HomePage() {
             <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg">
               <h3 className="mb-2 text-lg font-semibold">Total Students</h3>
               <p className="text-4xl font-bold">2,450</p>
+              <p className="mt-2 text-sm opacity-90">Enrolled for SY 2024-2025</p>
             </div>
+
             <div className="rounded-lg bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
               <h3 className="mb-2 text-lg font-semibold">Teaching Staff</h3>
-              <p className="text-4xl font-bold">85</p>
+              <p className="text-4xl font-bold">98</p>
+              <p className="mt-2 text-sm opacity-90">Dedicated educators</p>
             </div>
+
             <div className="rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg">
               <h3 className="mb-2 text-lg font-semibold">Classrooms</h3>
-              <p className="text-4xl font-bold">42</p>
+              <p className="text-4xl font-bold">65</p>
+              <p className="mt-2 text-sm opacity-90">Modern learning spaces</p>
             </div>
+
             <div className="rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg">
               <h3 className="mb-2 text-lg font-semibold">Programs Offered</h3>
-              <p className="text-4xl font-bold">12</p>
+              <p className="text-4xl font-bold">8</p>
+              <p className="mt-2 text-sm opacity-90">Specialized tracks</p>
             </div>
           </div>
         </section>
 
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
           <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">Quick Links</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <a
               href="/about/history"
-              className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
             >
-              <BookOpen className="h-10 w-10" />
-              <span className="text-lg font-semibold">Our History</span>
+              <BookOpen className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">School History</h3>
+                <p className="text-sm text-gray-600">Learn about our heritage</p>
+              </div>
             </a>
+
+            <a
+              href="/about/organizational-structure"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+            >
+              <Users className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">Organizational Structure</h3>
+                <p className="text-sm text-gray-600">Meet our leadership</p>
+              </div>
+            </a>
+
+            <a
+              href="/paps/learning-curriculum"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+            >
+              <GraduationCap className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">Learning Curriculum</h3>
+                <p className="text-sm text-gray-600">Explore our programs</p>
+              </div>
+            </a>
+
             <a
               href="/about/citizen-charter"
-              className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
             >
-              <FileText className="h-10 w-10" />
-              <span className="text-lg font-semibold">Citizen Charter</span>
+              <FileText className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">Citizen's Charter</h3>
+                <p className="text-sm text-gray-600">Service information</p>
+              </div>
             </a>
+
             <a
-              href="/academics/learning-curriculum"
-              className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
+              href="/paps/downloadable-forms"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
             >
-              <GraduationCap className="h-10 w-10" />
-              <span className="text-lg font-semibold">Curriculum</span>
+              <Download className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">Downloadable Forms</h3>
+                <p className="text-sm text-gray-600">Access school forms</p>
+              </div>
             </a>
+
             <a
-              href="/resources/downloadable-forms"
-              className="flex flex-col items-center gap-3 rounded-lg bg-[#800000] p-6 text-center text-white transition-colors hover:bg-[#600000]"
+              href="/about/alumni"
+              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
             >
-              <Download className="h-10 w-10" />
-              <span className="text-lg font-semibold">Forms</span>
+              <Users className="h-8 w-8 text-[#800000]" />
+              <div>
+                <h3 className="font-bold text-[#800000] group-hover:underline">Alumni</h3>
+                <p className="text-sm text-gray-600">Connect with graduates</p>
+              </div>
             </a>
           </div>
         </section>
 
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
           <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Calendar</h2>
-          <div className="overflow-hidden rounded-lg shadow-md">
-            <img
-              src="/assets/generated/calendar-header.dim_800x200.jpg"
-              alt="School Calendar"
-              className="h-auto w-full"
-            />
-          </div>
-          <div className="mt-6 space-y-4">
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 font-semibold text-[#800000]">First Quarter</h3>
-              <p className="text-gray-700">August 29, 2024 - November 8, 2024</p>
+          <div className="mx-auto max-w-4xl">
+            <div className="overflow-hidden rounded-lg border">
+              <img
+                src="/assets/generated/calendar-header.dim_800x200.jpg"
+                alt="School Calendar"
+                className="w-full"
+              />
             </div>
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 font-semibold text-[#800000]">Second Quarter</h3>
-              <p className="text-gray-700">November 11, 2024 - January 31, 2025</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 font-semibold text-[#800000]">Third Quarter</h3>
-              <p className="text-gray-700">February 3, 2025 - April 11, 2025</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 font-semibold text-[#800000]">Fourth Quarter</h3>
-              <p className="text-gray-700">April 14, 2025 - June 27, 2025</p>
-            </div>
-          </div>
-        </section>
+            <div className="mt-6 space-y-4">
+              <div className="flex items-start gap-4 rounded-lg border p-4">
+                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
+                  <div className="text-2xl font-bold">15</div>
+                  <div className="text-xs">JAN</div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#800000]">Enrollment Period Begins</h3>
+                  <p className="text-sm text-gray-600">Start of enrollment for incoming students</p>
+                </div>
+              </div>
 
-        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
-          {hymnLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-12 w-12 animate-spin text-[#800000]" />
+              <div className="flex items-start gap-4 rounded-lg border p-4">
+                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
+                  <div className="text-2xl font-bold">05</div>
+                  <div className="text-xs">FEB</div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#800000]">First Day of Classes</h3>
+                  <p className="text-sm text-gray-600">Opening of School Year 2024-2025</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 rounded-lg border p-4">
+                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
+                  <div className="text-2xl font-bold">20</div>
+                  <div className="text-xs">MAR</div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#800000]">Intramurals Week</h3>
+                  <p className="text-sm text-gray-600">Annual sports and cultural activities</p>
+                </div>
+              </div>
             </div>
-          ) : hymnVideo ? (
-            <div className="mx-auto max-w-4xl">
-              <video
-                ref={videoRef}
-                controls
-                className="w-full rounded-lg shadow-lg"
-                src={hymnVideo.getDirectURL()}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          ) : (
-            <div className="rounded-lg bg-gray-50 p-8 text-center">
-              <p className="text-gray-600">BNHS Hymn video will be available soon.</p>
-            </div>
-          )}
+          </div>
         </section>
       </div>
     </div>

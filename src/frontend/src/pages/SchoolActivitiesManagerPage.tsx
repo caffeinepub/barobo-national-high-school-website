@@ -5,6 +5,7 @@ import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import {
   useGetSliderImages,
   useAddSliderImage,
+  useAddSliderImageFromURL,
   useUpdateSliderImage,
   useDeleteSliderImage,
 } from '../hooks/useQueries';
@@ -26,6 +27,7 @@ export default function SchoolActivitiesManagerPage() {
   const { identity } = useInternetIdentity();
   const { data: sliderImages, isLoading } = useGetSliderImages();
   const addSliderImage = useAddSliderImage();
+  const addSliderImageFromURL = useAddSliderImageFromURL();
   const updateSliderImage = useUpdateSliderImage();
   const deleteSliderImage = useDeleteSliderImage();
 
@@ -109,30 +111,24 @@ export default function SchoolActivitiesManagerPage() {
         const arrayBuffer = await selectedFile.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         const blob = ExternalBlob.fromBytes(uint8Array);
-
-        const imageSource = {
-          __kind__: 'file' as const,
-          file: {
-            id: BigInt(0),
-            file: blob,
-            isAnimated: selectedFile.type === 'image/gif',
-          },
-        };
+        const isAnimated = selectedFile.type === 'image/gif';
 
         if (editingId !== null) {
           await updateSliderImage.mutateAsync({
             id: editingId,
-            image: imageSource,
+            file: blob,
             title,
             description,
             displayOrder: BigInt(0),
+            isAnimated,
           });
           toast.success('Slider image updated successfully!');
         } else {
           await addSliderImage.mutateAsync({
-            image: imageSource,
+            file: blob,
             title,
             description,
+            isAnimated,
           });
           toast.success('Slider image added successfully!');
         }
@@ -143,23 +139,24 @@ export default function SchoolActivitiesManagerPage() {
         }
 
         const convertedUrl = convertToDirectImageUrl(externalUrl.trim());
-        const imageSource = {
-          __kind__: 'url' as const,
-          url: convertedUrl,
-        };
 
         if (editingId !== null) {
+          // For URL updates, we need to use the URL-based mutation
+          // Since updateSliderImage expects a file, we'll need to handle this differently
+          // For now, we'll convert the URL to a blob
+          const blob = ExternalBlob.fromURL(convertedUrl);
           await updateSliderImage.mutateAsync({
             id: editingId,
-            image: imageSource,
+            file: blob,
             title,
             description,
             displayOrder: BigInt(0),
+            isAnimated: false,
           });
           toast.success('Slider image updated successfully!');
         } else {
-          await addSliderImage.mutateAsync({
-            image: imageSource,
+          await addSliderImageFromURL.mutateAsync({
+            url: convertedUrl,
             title,
             description,
           });
@@ -363,13 +360,14 @@ export default function SchoolActivitiesManagerPage() {
                 type="submit"
                 disabled={
                   addSliderImage.isPending ||
+                  addSliderImageFromURL.isPending ||
                   updateSliderImage.isPending ||
                   isValidating ||
                   (uploadType === 'url' && !previewUrl)
                 }
                 className="bg-maroon hover:bg-maroon/90"
               >
-                {addSliderImage.isPending || updateSliderImage.isPending ? (
+                {addSliderImage.isPending || addSliderImageFromURL.isPending || updateSliderImage.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {editingId !== null ? 'Updating...' : 'Adding...'}

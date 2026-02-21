@@ -1,62 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Super Admin recovery UX and reliable role resolution in Admin Dashboard",
+  "title": "Optional blinking animation for PageHeader title",
   "requirements": [
     {
-      "id": "REQ-16",
-      "summary": "Show logged-in Principal ID on Admin Dashboard with copy-to-clipboard control that renders even when role is Unknown/errors.",
+      "id": "REQ-1",
+      "summary": "Add a global reusable blink text animation class with reduced-motion-safe behavior.",
       "acceptanceCriteria": [
-        "When logged in, the Admin Dashboard shows a \"Principal ID\" line containing the full principal text.",
-        "A user can copy the Principal ID via a visible UI control (e.g., button) and receives a clear success indication (e.g., \"Copied\").",
-        "This Principal ID display renders regardless of whether the backend role query returns \"Unknown\"/errors."
+        "A new blink animation exists in the global styles (e.g., in frontend/src/index.css) as a class that can be applied to any element.",
+        "When the user has prefers-reduced-motion enabled, the blinking animation is disabled (no blinking occurs)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Add a persistent \"Principal ID\" display sourced from the Internet Identity identity object (identity.getPrincipal().toString()) plus a copy-to-clipboard Button. Include clear English feedback state (e.g., \"Copied\" / copy failed) and ensure this section renders even if role/permissions queries are loading, errored, or return \"Unknown\"."
+          "description": "Define a new @keyframes-based blink animation and expose it via a simple global class name (e.g., .animate-blink) suitable for headings; add a prefers-reduced-motion media query override that disables the animation when reduced motion is requested."
         }
       ]
     },
     {
-      "id": "REQ-17",
-      "summary": "Add a Super Admin Recovery section to Admin Dashboard for non-SuperAdmin logged-in users to trigger backend recovery and show clear success/error outcomes.",
+      "id": "REQ-2",
+      "summary": "Extend PageHeader with an opt-in prop to apply the blink class to the title without changing existing behavior by default.",
       "acceptanceCriteria": [
-        "If the logged-in user is not Super Admin, the Admin Dashboard shows a \"Super Admin Recovery\" section.",
-        "Clicking a recovery button runs the recovery/initialization action and, on success, the dashboard updates to show Role: SuperAdmin and unlocks Super Admin-only cards.",
-        "If the canister is already initialized to a different Super Admin, the UI shows a clear English error message explaining that only the current Super Admin can change Super Admin access."
+        "PageHeader accepts a new optional prop (e.g., blinkTitle?: boolean) that defaults to false.",
+        "When blinkTitle is true, the <h1> title in PageHeader uses the blink animation class and visibly blinks.",
+        "When blinkTitle is false or omitted, the title renders exactly as it does currently (no animation)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/PageHeader.tsx",
           "operation": "modify",
-          "description": "Add a React Query mutation hook (e.g., useRecoverSuperAdmin) that calls the backend capability recoverSuperAdmin(), returns the backend message, and exposes loading/error state for UI. Ensure it can be used to trigger role/permission query invalidations on success."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Add a \"Super Admin Recovery\" section that is only visible when identity is present and the current role is not \"SuperAdmin\". Provide a recovery Button that triggers the new useRecoverSuperAdmin mutation and renders clear English success/error messaging. On success, invalidate/refetch role and permissions queries so the dashboard updates to Role: SuperAdmin and Super Admin-only cards render."
-        }
-      ]
-    },
-    {
-      "id": "REQ-18",
-      "summary": "Ensure a shared (non-query) role-initializing call runs after successful Internet Identity login so the Admin Dashboard consistently resolves the correct role without manual refresh.",
-      "acceptanceCriteria": [
-        "After logging in via the Header \"Admin Login\" flow, the Admin Dashboard consistently shows the correct role (e.g., SuperAdmin/AdminUser/User) without requiring manual refreshes.",
-        "The UI no longer commonly displays transient \"Unknown\" role due to missing initialization calls when the canister is not yet initialized."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a dedicated React Query mutation hook (e.g., useInitializeAdminSession) that performs a shared backend call intended to initialize/refresh authorization state after login (for example by invoking an existing shared backend capability used for role initialization) and returns status for the UI to act upon."
-        },
-        {
-          "path": "frontend/src/pages/AdminDashboardPage.tsx",
-          "operation": "modify",
-          "description": "Trigger the shared post-login initialization mutation when the page is reached with an authenticated identity (run once per identity/session), then invalidate/refetch ['callerRole'] and ['callerPermissions'] so Role reliably resolves to the correct value instead of remaining \"Unknown\"/\"Guest\". Keep all user-facing text introduced by this change in English."
+          "description": "Add a new optional prop (blinkTitle?: boolean, defaulting to false) and conditionally apply the global blink animation class (from frontend/src/index.css) to the title <h1> only when blinkTitle is true, preserving existing markup and styling when false/omitted."
         }
       ]
     }

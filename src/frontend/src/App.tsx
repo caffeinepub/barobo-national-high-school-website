@@ -90,6 +90,7 @@ const indexRoute = createRoute({
   component: HomePage,
 });
 
+// Flat routes (legacy)
 const historyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/history',
@@ -420,6 +421,284 @@ const supportServicesRoute = createRoute({
   component: SupportServicesPage,
 });
 
+// Prefixed route aliases for About category
+const aboutHistoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/history',
+  component: HistoryPage,
+});
+
+const aboutOrganizationalStructureRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/organizational-structure',
+  component: OrganizationalStructurePage,
+});
+
+const aboutCitizenCharterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/citizen-charter',
+  component: CitizenCharterPage,
+});
+
+const aboutStudentCornerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/student-corner',
+  component: StudentCornerPage,
+});
+
+const aboutClubsOrganizationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/clubs-organizations',
+  component: ClubsOrganizationsPage,
+});
+
+const aboutAlumniRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/about/alumni',
+  component: AlumniPage,
+});
+
+// Prefixed route aliases for Issuances category
+const issuancesDepEdOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/deped-orders',
+  component: DepEdOrdersPage,
+});
+
+const issuancesDepEdMemorandaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/deped-memoranda',
+  component: DepEdMemorandaPage,
+});
+
+const issuancesDivisionOrdersMemorandaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/division-orders-memoranda',
+  component: DivisionOrdersMemorandaPage,
+});
+
+const issuancesSchoolOrdersMemorandaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/school-orders-memoranda',
+  component: SchoolOrdersMemorandaPage,
+});
+
+const issuancesAdvisoriesCircularsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/advisories-circulars',
+  component: AdvisoriesCircularsPage,
+});
+
+const issuancesArchivedIssuancesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issuances/archived-issuances',
+  component: ArchivedIssuancesPage,
+});
+
+// Prefixed route aliases for PAPs category
+const papsSIPRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/sip',
+  component: SIPPage,
+});
+
+const papsLearningCurriculumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/learning-curriculum',
+  component: LearningCurriculumPage,
+});
+
+const papsSBMRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/sbm',
+  component: SBMPage,
+});
+
+const papsINSETRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/inset',
+  component: INSETPage,
+});
+
+const papsARALProgramRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/aral-program',
+  component: ARALProgramPage,
+});
+
+const papsPRAISERoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/praise',
+  component: PRAISEPage,
+});
+
+const papsInfrastructureRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/infrastructure',
+  component: InfrastructurePage,
+});
+
+const papsSchoolHealthRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/school-health',
+  component: SchoolHealthPage,
+});
+
+const papsWINSRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/wins',
+  component: WINSPage,
+});
+
+const papsChildProtectionPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/child-protection-policy',
+  component: ChildProtectionPolicyPage,
+});
+
+const papsPrefectOfDisciplineRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/prefect-of-discipline',
+  component: PrefectOfDisciplinePage,
+});
+
+const papsGPPRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/gpp',
+  component: GPPPage,
+});
+
+const papsBKDRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/bkd',
+  component: BKDPage,
+});
+
+const papsBrigadaEskwelaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/brigada-eskwela',
+  component: BrigadaEskwelaPage,
+});
+
+const papsESWMRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/paps/eswm',
+  component: ESWMPage,
+});
+
+// Prefixed route aliases for Publications category
+const publicationsTheInkspirerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/publications/the-inkspirer',
+  component: TheInkspirerPage,
+});
+
+const publicationsTintangBaloboRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/publications/tintang-balobo',
+  component: TintangBaloboPage,
+});
+
+const publicationsSOSARoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/publications/sosa',
+  component: SOSAPage,
+});
+
+// Prefixed route aliases for Research category
+const researchActionResearchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/research/action-research',
+  component: ActionResearchPage,
+});
+
+const researchSchoolBasedResearchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/research/school-based-research',
+  component: SchoolBasedResearchPage,
+});
+
+const researchResearchOutputsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/research/research-outputs',
+  component: ResearchOutputsPage,
+});
+
+// Prefixed route aliases for Monitoring category
+const monitoringInstructionalSupervisionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/instructional-supervision',
+  component: InstructionalSupervisionPage,
+});
+
+const monitoringPhysicalEvaluationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/physical-evaluation',
+  component: PhysicalEvaluationPage,
+});
+
+const monitoringDivisionMonitoringRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/division-monitoring',
+  component: DivisionMonitoringPage,
+});
+
+const monitoringSMEARoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/smea',
+  component: SMEAPage,
+});
+
+const monitoringSPTARoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/spta',
+  component: SPTAPage,
+});
+
+const monitoringFinancialBoardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monitoring/financial-board',
+  component: FinancialBoardPage,
+});
+
+// Prefixed route aliases for Others category
+const othersMDLFeedbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/mdl-feedback',
+  component: MDLFeedbackPage,
+});
+
+const othersNATResourcesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/nat-resources',
+  component: NATResourcesPage,
+});
+
+const othersNCAEResourcesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/ncae-resources',
+  component: NCAEResourcesPage,
+});
+
+const othersKhanAcademyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/khan-academy',
+  component: KhanAcademyPage,
+});
+
+const othersDownloadableFormsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/downloadable-forms',
+  component: DownloadableFormsPage,
+});
+
+const othersSupportServicesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/others/support-services',
+  component: SupportServicesPage,
+});
+
+// Admin routes
 const adminDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/dashboard',
@@ -488,6 +767,7 @@ const organizationalStructureManagementRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  // Flat routes (legacy)
   historyRoute,
   organizationalStructureRoute,
   citizenCharterRoute,
@@ -543,6 +823,59 @@ const routeTree = rootRoute.addChildren([
   khanAcademyRoute,
   downloadableFormsRoute,
   supportServicesRoute,
+  // Prefixed route aliases for About
+  aboutHistoryRoute,
+  aboutOrganizationalStructureRoute,
+  aboutCitizenCharterRoute,
+  aboutStudentCornerRoute,
+  aboutClubsOrganizationsRoute,
+  aboutAlumniRoute,
+  // Prefixed route aliases for Issuances
+  issuancesDepEdOrdersRoute,
+  issuancesDepEdMemorandaRoute,
+  issuancesDivisionOrdersMemorandaRoute,
+  issuancesSchoolOrdersMemorandaRoute,
+  issuancesAdvisoriesCircularsRoute,
+  issuancesArchivedIssuancesRoute,
+  // Prefixed route aliases for PAPs
+  papsSIPRoute,
+  papsLearningCurriculumRoute,
+  papsSBMRoute,
+  papsINSETRoute,
+  papsARALProgramRoute,
+  papsPRAISERoute,
+  papsInfrastructureRoute,
+  papsSchoolHealthRoute,
+  papsWINSRoute,
+  papsChildProtectionPolicyRoute,
+  papsPrefectOfDisciplineRoute,
+  papsGPPRoute,
+  papsBKDRoute,
+  papsBrigadaEskwelaRoute,
+  papsESWMRoute,
+  // Prefixed route aliases for Publications
+  publicationsTheInkspirerRoute,
+  publicationsTintangBaloboRoute,
+  publicationsSOSARoute,
+  // Prefixed route aliases for Research
+  researchActionResearchRoute,
+  researchSchoolBasedResearchRoute,
+  researchResearchOutputsRoute,
+  // Prefixed route aliases for Monitoring
+  monitoringInstructionalSupervisionRoute,
+  monitoringPhysicalEvaluationRoute,
+  monitoringDivisionMonitoringRoute,
+  monitoringSMEARoute,
+  monitoringSPTARoute,
+  monitoringFinancialBoardRoute,
+  // Prefixed route aliases for Others
+  othersMDLFeedbackRoute,
+  othersNATResourcesRoute,
+  othersNCAEResourcesRoute,
+  othersKhanAcademyRoute,
+  othersDownloadableFormsRoute,
+  othersSupportServicesRoute,
+  // Admin routes
   adminDashboardRoute,
   bannerManagementRoute,
   schoolActivitiesManagerRoute,

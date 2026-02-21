@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
-import { useGetCallerRole, useGetCallerPermissions, useRecoverSuperAdmin, useInitializeAdminSession } from '@/hooks/useQueries';
+import { useGetCallerRole, useGetCallerPermissions, useRecoverSuperAdmin, useGetSuperAdminStatus, useInitializeSuperAdmin } from '@/hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,27 +14,46 @@ export default function AdminDashboardPage() {
   const { identity } = useInternetIdentity();
   const { data: role, isLoading: roleLoading, isError: roleError, refetch: refetchRole } = useGetCallerRole();
   const { data: permissions, isLoading: permissionsLoading, refetch: refetchPermissions } = useGetCallerPermissions();
+  const { data: superAdminStatus, isLoading: statusLoading } = useGetSuperAdminStatus();
   const recoverSuperAdminMutation = useRecoverSuperAdmin();
-  const initializeSessionMutation = useInitializeAdminSession();
+  const initializeSuperAdminMutation = useInitializeSuperAdmin();
   
   const [copied, setCopied] = useState(false);
-  const [sessionInitialized, setSessionInitialized] = useState(false);
+  const [autoInitAttempted, setAutoInitAttempted] = useState(false);
 
   const principalId = identity?.getPrincipal().toString() || '';
 
-  // Initialize session once when identity is available
+  // Auto-initialize Super Admin if uninitialized
   useEffect(() => {
-    if (identity && !sessionInitialized && !roleLoading) {
-      initializeSessionMutation.mutate(undefined, {
-        onSuccess: () => {
-          setSessionInitialized(true);
+    if (
+      identity &&
+      !autoInitAttempted &&
+      !statusLoading &&
+      !roleLoading &&
+      superAdminStatus &&
+      !superAdminStatus.isInitialized
+    ) {
+      setAutoInitAttempted(true);
+      
+      initializeSuperAdminMutation.mutate(undefined, {
+        onSuccess: async () => {
+          toast.success('Super Admin initialized successfully! You are now the Super Admin.');
+          await refetchRole();
+          await refetchPermissions();
         },
         onError: (error: any) => {
-          console.error('Session initialization error:', error);
+          const errorMessage = error.message || 'Failed to initialize Super Admin';
+          if (errorMessage.includes('already initialized')) {
+            toast.info('Super Admin is already initialized by another user.');
+          } else if (errorMessage.includes('Anonymous')) {
+            toast.error('Cannot initialize Super Admin with anonymous identity.');
+          } else {
+            toast.error(`Initialization failed: ${errorMessage}`);
+          }
         },
       });
     }
-  }, [identity, sessionInitialized, roleLoading]);
+  }, [identity, autoInitAttempted, statusLoading, roleLoading, superAdminStatus]);
 
   const handleCopyPrincipal = async () => {
     try {
@@ -50,12 +69,18 @@ export default function AdminDashboardPage() {
   const handleRecoverSuperAdmin = async () => {
     try {
       const message = await recoverSuperAdminMutation.mutateAsync();
-      toast.success(message);
+      toast.success('Super Admin access recovered successfully!');
       await refetchRole();
       await refetchPermissions();
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to recover Super Admin access';
-      toast.error(errorMessage);
+      if (errorMessage.includes('not initialized')) {
+        toast.error('Super Admin is not initialized yet. Please wait for auto-initialization.');
+      } else if (errorMessage.includes('Only the registered Super Admin')) {
+        toast.error('Access denied: You are not the registered Super Admin.');
+      } else {
+        toast.error(`Recovery failed: ${errorMessage}`);
+      }
     }
   };
 
@@ -74,7 +99,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (roleLoading || permissionsLoading) {
+  if (roleLoading || permissionsLoading || statusLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-school-blue/5 py-8">
         <div className="container mx-auto px-4">
@@ -148,7 +173,7 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Super Admin Recovery Section - Only show if not SuperAdmin */}
-        {!isSuperAdmin && (
+        {!isSuperAdmin && superAdminStatus?.isInitialized && (
           <Card className="mb-6 max-w-4xl mx-auto border-orange-500/20 shadow-lg bg-orange-50/50">
             <CardHeader>
               <CardTitle className="text-orange-700 flex items-center gap-2">
@@ -424,13 +449,13 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <CardTitle className="text-school-blue">Alumni Management</CardTitle>
-                    <CardDescription>Manage Alumni page content</CardDescription>
+                    <CardDescription>Manage alumni profiles and content</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Edit Alumni page content, manage alumni profiles, achievements, and community engagement invitations.
+                  Edit alumni page content, create and manage alumni profiles with achievements and current positions.
                 </p>
                 <Button 
                   onClick={() => navigate({ to: '/admin/alumni-management' })}
@@ -459,7 +484,7 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Upload and manage the BNHS Hymn video displayed on the homepage. Supports device uploads and external video links.
+                  Upload and manage the BNHS Hymn video displayed on the homepage. Supports MP4 and other video formats.
                 </p>
                 <Button 
                   onClick={() => navigate({ to: '/admin/bnhs-hymn-management' })}
@@ -472,15 +497,6 @@ export default function AdminDashboardPage() {
             </Card>
           )}
         </div>
-
-        {!isSuperAdmin && permissions && permissions.length === 0 && (
-          <Alert className="max-w-2xl mx-auto mt-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              You don't have any permissions assigned yet. Please contact the Super Admin to grant you access to content management areas.
-            </AlertDescription>
-          </Alert>
-        )}
       </div>
     </div>
   );
