@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T09:01:29.012Z",
+  "generatedAt": "2026-02-22T00:31:22.415Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,35 +12,46 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
+        "summary": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css"
+          "frontend/src/lib/urlConverter.ts",
+          "frontend/src/pages/BNHSHymnManagementPage.tsx",
+          "frontend/src/pages/HomePage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/index.css"
+          "frontend/src/lib/urlConverter.ts",
+          "frontend/src/pages/BNHSHymnManagementPage.tsx",
+          "frontend/src/pages/HomePage.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
+        "summary": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/PageHeader.tsx"
+          "frontend/src/pages/HomePage.tsx",
+          "frontend/src/lib/urlConverter.ts",
+          "frontend/src/pages/BNHSHymnManagementPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/PageHeader.tsx"
+          "frontend/src/pages/HomePage.tsx",
+          "frontend/src/lib/urlConverter.ts",
+          "frontend/src/pages/BNHSHymnManagementPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/PageHeader.tsx",
-    "frontend/src/index.css",
+    "frontend/src/config.ts",
+    "frontend/src/lib/urlConverter.ts",
+    "frontend/src/pages/BNHSHymnManagementPage.tsx",
+    "frontend/src/pages/HomePage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

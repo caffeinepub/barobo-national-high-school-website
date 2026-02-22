@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Allow page title text to optionally blink via a reusable, reduced-motion-safe CSS animation, without changing existing pages by default.
+**Goal:** Fix YouTube video embedding in the BNHS Hymn section so that pasted YouTube links display and play correctly.
 
 **Planned changes:**
-- Add a reusable global CSS blink animation exposed via a simple class name that can be applied to headings/elements.
-- Ensure the blink animation is disabled when the user has `prefers-reduced-motion` enabled.
-- Update the `PageHeader` component to accept an optional prop (e.g., `blinkTitle?: boolean`, default `false`) that applies the blink class to the `<h1>` title only when enabled.
+- Fix YouTube URL conversion to properly handle standard (youtube.com/watch?v=) and short (youtu.be/) link formats for embedding
+- Configure YouTube embed player to enable autoplay with sound after the existing 3-second delay
+- Add error handling to display clear messages when videos cannot be embedded due to privacy or embed restrictions
 
-**User-visible outcome:** Page titles can be configured to blink on specific pages/components that opt in, while users with reduced-motion preference will see no blinking.
+**User-visible outcome:** Administrators can paste YouTube links into the BNHS Hymn external link field, and the videos will display and auto-play correctly on the public BNHS Hymn page.

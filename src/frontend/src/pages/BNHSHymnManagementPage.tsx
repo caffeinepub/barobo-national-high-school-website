@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Upload, AlertCircle, Loader2, Video, AlertTriangle } from 'lucide-react';
-import { convertToDirectImageUrl } from '@/lib/urlConverter';
+import { ArrowLeft, Upload, AlertCircle, Loader2, Video, AlertTriangle, CheckCircle } from 'lucide-react';
+import { convertToDirectImageUrl, isYouTubeUrl, convertYouTubeToEmbed } from '@/lib/urlConverter';
 import { uploadFile, uploadFromURL, validateUploadedBlob } from '@/lib/externalBlobUpload';
 import { getUploadErrorMessage, logUploadError } from '@/lib/uploadErrorMessage';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ export default function BNHSHymnManagementPage() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
   const [validationWarning, setValidationWarning] = useState<string>('');
+  const [urlValidation, setUrlValidation] = useState<{ isValid: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (hymnVideo) {
@@ -37,13 +38,37 @@ export default function BNHSHymnManagementPage() {
   useEffect(() => {
     if (uploadMode === 'url' && videoUrl.trim()) {
       const timeoutId = setTimeout(() => {
-        const directUrl = convertToDirectImageUrl(videoUrl);
-        setPreviewUrl(directUrl);
+        // Validate YouTube URL
+        if (isYouTubeUrl(videoUrl)) {
+          const embedUrl = convertYouTubeToEmbed(videoUrl);
+          if (embedUrl) {
+            setPreviewUrl(embedUrl);
+            setUrlValidation({
+              isValid: true,
+              message: 'Valid YouTube URL detected. Video will be embedded from YouTube.'
+            });
+          } else {
+            setPreviewUrl(null);
+            setUrlValidation({
+              isValid: false,
+              message: 'Invalid YouTube URL format. Please use a standard YouTube link (e.g., https://www.youtube.com/watch?v=VIDEO_ID)'
+            });
+          }
+        } else {
+          // For non-YouTube URLs, use the existing converter
+          const directUrl = convertToDirectImageUrl(videoUrl);
+          setPreviewUrl(directUrl);
+          setUrlValidation({
+            isValid: true,
+            message: 'External video link detected. Note: Some cloud storage links may not work due to CORS restrictions.'
+          });
+        }
       }, 300);
 
       return () => clearTimeout(timeoutId);
     } else if (uploadMode === 'url') {
       setPreviewUrl(null);
+      setUrlValidation(null);
     }
   }, [videoUrl, uploadMode]);
 
@@ -57,6 +82,7 @@ export default function BNHSHymnManagementPage() {
 
       setVideoFile(file);
       setValidationWarning('');
+      setUrlValidation(null);
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
     }
@@ -80,7 +106,17 @@ export default function BNHSHymnManagementPage() {
           onError: (error) => logUploadError(error, 'BNHS Hymn Upload'),
         });
       } else if (uploadMode === 'url' && videoUrl.trim()) {
-        const directUrl = convertToDirectImageUrl(videoUrl);
+        // Convert YouTube URL to embed format before saving
+        const directUrl = isYouTubeUrl(videoUrl) 
+          ? convertYouTubeToEmbed(videoUrl) || videoUrl
+          : convertToDirectImageUrl(videoUrl);
+        
+        if (isYouTubeUrl(videoUrl) && !convertYouTubeToEmbed(videoUrl)) {
+          toast.error('Invalid YouTube URL format. Please check the URL and try again.');
+          setIsUploading(false);
+          return;
+        }
+        
         videoBlob = uploadFromURL(directUrl);
       } else {
         toast.error('Please provide a video file or URL');
@@ -111,6 +147,7 @@ export default function BNHSHymnManagementPage() {
       setVideoFile(null);
       setVideoUrl('');
       setUploadProgress(0);
+      setUrlValidation(null);
     } catch (error: any) {
       logUploadError(error, 'BNHS Hymn Upload');
       toast.error(getUploadErrorMessage(error));
@@ -158,6 +195,19 @@ export default function BNHSHymnManagementPage() {
           </Alert>
         )}
 
+        {urlValidation && (
+          <Alert className={`mb-6 ${urlValidation.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            {urlValidation.isValid ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription className={urlValidation.isValid ? 'text-green-800' : 'text-red-800'}>
+              {urlValidation.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Card className="border-school-gold/20 shadow-lg">
           <CardHeader>
             <CardTitle className="text-school-blue flex items-center gap-2">
@@ -165,7 +215,7 @@ export default function BNHSHymnManagementPage() {
               Upload BNHS Hymn Video
             </CardTitle>
             <CardDescription>
-              Upload a video file from your device or provide an external link
+              Upload a video file from your device or provide an external link (YouTube recommended)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -214,9 +264,12 @@ export default function BNHSHymnManagementPage() {
                   type="url"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="Paste video URL (Google Drive, OneDrive, Dropbox, etc.)"
+                  placeholder="Paste YouTube URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)"
                   className="border-school-gold/30"
                 />
+                <p className="text-xs text-gray-500">
+                  Tip: YouTube links work best. Standard format: https://www.youtube.com/watch?v=VIDEO_ID or short format: https://youtu.be/VIDEO_ID
+                </p>
               </div>
             )}
 
@@ -224,13 +277,23 @@ export default function BNHSHymnManagementPage() {
               <div className="space-y-2">
                 <Label className="text-[#800000] font-semibold">Current/Preview Video</Label>
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
-                  <video
-                    src={previewUrl}
-                    controls
-                    className="h-full w-full"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                  {isYouTubeUrl(previewUrl) || previewUrl.includes('/embed/') ? (
+                    <iframe
+                      src={previewUrl}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="BNHS Hymn Preview"
+                    />
+                  ) : (
+                    <video
+                      src={previewUrl}
+                      controls
+                      className="h-full w-full"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
                 </div>
               </div>
             )}
@@ -241,7 +304,8 @@ export default function BNHSHymnManagementPage() {
                 isUploading ||
                 setHymnMutation.isPending ||
                 (uploadMode === 'file' && !videoFile) ||
-                (uploadMode === 'url' && !videoUrl.trim())
+                (uploadMode === 'url' && !videoUrl.trim()) ||
+                (urlValidation !== null && !urlValidation.isValid)
               }
               className="w-full bg-[#800000] hover:bg-[#9a0000] text-white"
             >

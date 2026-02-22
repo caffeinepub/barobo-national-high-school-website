@@ -9,6 +9,7 @@ import { Eye, Target, Star, BookOpen, FileText, GraduationCap, Download, ScrollT
 import { useGetBNHSHymnVideo, useGetCitizenCharterBackgroundPublic, useGetCitizenCharterStaticImagePublic } from '../hooks/useQueries';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { isYouTubeUrl } from '../lib/urlConverter';
 
 export default function HomePage() {
   const { actor } = useActor();
@@ -16,12 +17,14 @@ export default function HomePage() {
   const { data: citizenCharterBackground } = useGetCitizenCharterBackgroundPublic();
   const { data: citizenCharterStaticImage } = useGetCitizenCharterStaticImagePublic();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [hasAttemptedAutoplay, setHasAttemptedAutoplay] = useState(false);
   const [autoplayFailed, setAutoplayFailed] = useState(false);
   const weatherRef = useRef<HTMLDivElement>(null);
   const [weatherHeight, setWeatherHeight] = useState<number | undefined>(undefined);
   const [backgroundImageError, setBackgroundImageError] = useState(false);
   const [staticImageError, setStaticImageError] = useState(false);
+  const [embedError, setEmbedError] = useState(false);
 
   // Memoize the hymn video URL to prevent src changes during playback
   // Only changes when the underlying blob object identity changes
@@ -29,6 +32,25 @@ export default function HomePage() {
     if (!hymnVideo) return null;
     return hymnVideo.getDirectURL();
   }, [hymnVideo]);
+
+  // Check if the hymn video is a YouTube URL
+  const isYouTubeVideo = useMemo(() => {
+    if (!hymnVideoUrl) return false;
+    return isYouTubeUrl(hymnVideoUrl) || hymnVideoUrl.includes('/embed/');
+  }, [hymnVideoUrl]);
+
+  // Build YouTube embed URL with autoplay parameters
+  const youtubeEmbedUrl = useMemo(() => {
+    if (!isYouTubeVideo || !hymnVideoUrl) return null;
+    
+    // If already an embed URL, add parameters
+    if (hymnVideoUrl.includes('/embed/')) {
+      const separator = hymnVideoUrl.includes('?') ? '&' : '?';
+      return `${hymnVideoUrl}${separator}autoplay=1&mute=0`;
+    }
+    
+    return hymnVideoUrl;
+  }, [isYouTubeVideo, hymnVideoUrl]);
 
   // Memoize Citizen Charter images with cache-busting
   const citizenCharterBackgroundUrl = useMemo(() => {
@@ -134,7 +156,16 @@ export default function HomePage() {
   // Single deterministic autoplay attempt for BNHS Hymn video
   // Only runs once per page load when video URL becomes available
   useEffect(() => {
-    if (!hymnVideoUrl || !videoRef.current || hasAttemptedAutoplay) return;
+    if (!hymnVideoUrl || hasAttemptedAutoplay) return;
+
+    // For YouTube embeds, autoplay is handled via URL parameters
+    if (isYouTubeVideo) {
+      setHasAttemptedAutoplay(true);
+      return;
+    }
+
+    // For regular video files
+    if (!videoRef.current) return;
 
     const autoplayTimer = setTimeout(() => {
       if (videoRef.current) {
@@ -157,7 +188,7 @@ export default function HomePage() {
     }, 3000); // 3-second delay
 
     return () => clearTimeout(autoplayTimer);
-  }, [hymnVideoUrl, hasAttemptedAutoplay]);
+  }, [hymnVideoUrl, hasAttemptedAutoplay, isYouTubeVideo]);
 
   const formatVisionText = (text: string) => {
     return text.split('\n').map((line, index) => (
@@ -227,449 +258,420 @@ export default function HomePage() {
         {/* Welcome and Faculty Section */}
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
           <div className="grid gap-8 md:grid-cols-2">
-            {/* Left Column: Welcome and Principal */}
-            <div className="space-y-6">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-[#800000]">
+            {/* Welcome Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-4">
+                <School className="h-8 w-8 text-[#800000]" />
+                <h2 className="text-3xl font-bold text-[#800000]">
                   Welcome to Barobo National High School Website!
                 </h2>
-                <p className="text-justify text-gray-700 leading-relaxed">
-                  Empowering students to reach their full potential through excellence in education, character development, and community engagement. Committed to providing quality education and nurturing future leaders in our community through excellence in teaching and learning.
-                </p>
               </div>
-
-              {/* Principal Profile */}
               <div className="space-y-4">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-shrink-0">
-                    <img
-                      src="/assets/generated/principal-photo.dim_600x600.png"
-                      alt="School Principal - Rachel Methuselah R. Cumahig, PhD"
-                      className="w-full md:w-48 h-auto rounded-lg shadow-md object-cover"
-                    />
-                    <div className="mt-3 text-center">
-                      <p className="font-semibold text-gray-900">Rachel Methuselah R. Cumahig, PhD</p>
-                      <p className="text-sm text-[#800000] font-medium">Principal IV</p>
-                    </div>
-                  </div>
-
-                  {/* Principal Message */}
-                  <div className="flex-1">
-                    <h3 className="mb-3 text-lg font-bold text-[#800000]">Principal's Message</h3>
-                    <p className="text-justify text-gray-700 leading-relaxed">
-                      Welcome to Barobo National High School! As Principal, I am honored to lead this institution dedicated to academic excellence and holistic student development. Our commitment is to provide a nurturing environment where every student can thrive, discover their potential, and become responsible citizens of our nation.
+                <div className="flex items-start gap-3">
+                  <img
+                    src="/assets/principal 3.jpg"
+                    alt="Principal"
+                    className="w-32 h-32 rounded-lg object-cover shadow-md"
+                  />
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">LORNA M. BAUTISTA, EdD</p>
+                    <p className="text-sm text-gray-600 mb-2">Principal IV</p>
+                    <p className="text-gray-700 leading-relaxed">
+                      Welcome to Barobo National High School! We are committed to providing quality education and fostering a nurturing environment for all our students.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Faculty and Staff */}
-            <div className="space-y-6">
-              <div>
-                <div className="mb-4 flex items-center gap-2">
-                  <Users className="h-6 w-6 text-[#800000]" />
-                  <h2 className="text-2xl font-bold text-[#800000]">
-                    Our Dedicated Faculty of JHS, SHS and Staff of Barobo National High School
-                  </h2>
-                </div>
-                <div className="mb-4">
-                  <img
-                    src="/assets/generated/faculty-staff-group.dim_1600x900.png"
-                    alt="Dedicated Faculty of JHS, SHS and Staff of Barobo National High School"
-                    className="w-full h-auto rounded-lg shadow-md object-cover"
-                  />
-                </div>
-                <p className="text-justify text-gray-700 leading-relaxed">
-                  Our school is proud to have a team of dedicated, qualified, and passionate educators who are committed to student success. Our faculty members bring years of experience and expertise to the classroom.
-                </p>
-                <p className="mt-4 text-justify text-gray-700 leading-relaxed">
-                  Through continuous professional development and training, our teachers stay updated with the latest educational methodologies and technologies to provide the best learning experience for our students.
-                </p>
+            {/* Faculty Group Photo */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-4">
+                <Users className="h-8 w-8 text-[#800000]" />
+                <h2 className="text-3xl font-bold text-[#800000]">Our Faculty</h2>
               </div>
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-lg">
+                <img
+                  src="/assets/generated/faculty-staff-group.dim_1600x900.png"
+                  alt="Faculty and Staff Group Photo"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <p className="text-center text-gray-600 italic">
+                Dedicated educators committed to excellence in teaching and learning
+              </p>
             </div>
           </div>
         </section>
 
-        <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Activities</h2>
-
+        {/* School Activities Slider */}
         <section className="mb-12">
           <SchoolActivitiesSlider />
         </section>
 
         {/* Citizen Charter Section */}
-        {(citizenCharterBackgroundUrl || citizenCharterStaticImageUrl) && (
-          <section className="mb-12">
-            <div
-              className="relative rounded-lg overflow-hidden shadow-md"
-              style={
-                citizenCharterBackgroundUrl && !backgroundImageError
-                  ? {
-                      backgroundImage: `linear-gradient(rgba(128, 0, 0, 0.7), rgba(128, 0, 0, 0.7)), url(${citizenCharterBackgroundUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }
-                  : { backgroundColor: '#800000' }
-              }
-            >
-              {citizenCharterBackgroundUrl && (
+        <section className="mb-12">
+          <div
+            className="rounded-lg p-8 shadow-md"
+            style={{
+              backgroundColor: citizenCharterBackgroundUrl && !backgroundImageError ? 'transparent' : '#800000',
+              backgroundImage: citizenCharterBackgroundUrl && !backgroundImageError
+                ? `url(${citizenCharterBackgroundUrl})`
+                : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          >
+            <h2 className="mb-6 text-center text-3xl font-bold text-white">
+              Citizen Charter
+            </h2>
+
+            {/* Static Image Section */}
+            {citizenCharterStaticImageUrl && !staticImageError && (
+              <div className="mb-8 overflow-hidden rounded-lg shadow-lg">
                 <img
-                  src={citizenCharterBackgroundUrl}
-                  alt=""
-                  className="hidden"
-                  onError={() => setBackgroundImageError(true)}
+                  src={citizenCharterStaticImageUrl}
+                  alt="Citizen Charter"
+                  className="w-full h-auto object-contain"
+                  style={{ maxHeight: '800px' }}
+                  onError={() => {
+                    console.error('Failed to load Citizen Charter static image');
+                    setStaticImageError(true);
+                  }}
                 />
-              )}
-              <div className="p-8 text-white">
-                <h2 className="mb-4 text-center text-3xl font-bold">Citizen's Charter</h2>
-                <p className="text-center text-lg mb-6">School Contact Information and Service Hours</p>
-                
-                {citizenCharterStaticImageUrl && !staticImageError && (
-                  <div className="mb-6 mx-auto max-w-5xl">
-                    <img
-                      src={citizenCharterStaticImageUrl}
-                      alt="Citizen Charter Information"
-                      className="w-full h-auto rounded-lg shadow-lg"
-                      onError={() => setStaticImageError(true)}
-                    />
+              </div>
+            )}
+
+            {/* Contact Information Cards */}
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Contact Information */}
+              <Card className="border-white/20 bg-white/95 backdrop-blur-sm">
+                <CardHeader style={{ backgroundColor: '#800000' }}>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <MapPin className="h-5 w-5" />
+                    Contact Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-3 text-sm">
+                    <p className="font-semibold text-gray-800">School Address:</p>
+                    <p className="text-gray-700">
+                      Barobo National High School<br />
+                      Purok 1B Townsite, Poblacion<br />
+                      Barobo, Surigao del Sur<br />
+                      Philippines 8309
+                    </p>
+                    <p className="font-semibold text-gray-800 mt-4">Contact:</p>
+                    <p className="text-gray-700">
+                      Phone: (086) 850 - 0113 (JHS)<br />
+                      (086) 850 - 0547 (SHS)<br />
+                      Email: 304861@deped.gov.ph
+                    </p>
                   </div>
-                )}
+                </CardContent>
+              </Card>
 
-                <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
-                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 text-white">
-                        <MapPin className="h-6 w-6" />
-                        <CardTitle className="text-white">Contact Information</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="text-white/90">
-                      <p className="text-sm">
-                        Barobo National High School<br />
-                        Purok 1B Townsite, Poblacion<br />
-                        Barobo, Surigao del Sur<br />
-                        Philippines 8309<br />
-                        <br />
-                        Phone: (086) 850 - 0113 (JHS)<br />
-                        (086) 850 - 0547 (SHS)<br />
-                        Email: 304861@deped.gov.ph
-                      </p>
-                    </CardContent>
-                  </Card>
+              {/* Office Hours */}
+              <Card className="border-white/20 bg-white/95 backdrop-blur-sm">
+                <CardHeader style={{ backgroundColor: '#22c55e' }}>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Clock className="h-5 w-5" />
+                    Office Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-3 text-sm">
+                    <p className="font-semibold text-gray-800">Monday - Friday</p>
+                    <p className="text-gray-700">
+                      Morning: 8:00 A.M. - 12:00 P.M.<br />
+                      Afternoon: 1:00 P.M. - 5:00 P.M.
+                    </p>
+                    <p className="font-semibold text-gray-800 mt-4">Saturday - Sunday</p>
+                    <p className="text-gray-700">Closed</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 text-white">
-                        <Clock className="h-6 w-6" />
-                        <CardTitle className="text-white">Office Hours</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="text-white/90">
-                      <p className="text-sm">
-                        Monday - Friday<br />
-                        8:00 A.M. - 12:00 P.M. (Morning)<br />
-                        1:00 P.M. - 5:00 P.M. (Afternoon)<br />
-                        <br />
-                        Saturday - Sunday<br />
-                        Closed
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 text-white">
-                        <School className="h-6 w-6" />
-                        <CardTitle className="text-white">School Hours</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="text-white/90">
-                      <p className="text-sm">
-                        <strong>JHS:</strong> Mon-Fri<br />
-                        7:15 A.M. - 5:00 P.M.<br />
-                        <br />
-                        <strong>SHS:</strong> Mon-Fri<br />
-                        7:30 A.M. - 5:00 P.M.<br />
-                        <br />
-                        Sat-Sun: Closed
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              {/* School Hours */}
+              <Card className="border-white/20 bg-white/95 backdrop-blur-sm">
+                <CardHeader style={{ backgroundColor: '#0ea5e9' }}>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <School className="h-5 w-5" />
+                    School Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-3 text-sm">
+                    <p className="font-semibold text-gray-800">Junior High School (JHS)</p>
+                    <p className="text-gray-700">
+                      Monday - Friday<br />
+                      Morning: 7:15 A.M. - 12:00 P.M.<br />
+                      Afternoon: 1:00 P.M. - 5:00 P.M.
+                    </p>
+                    <p className="font-semibold text-gray-800 mt-4">Senior High School (SHS)</p>
+                    <p className="text-gray-700">
+                      Monday - Friday<br />
+                      Morning: 7:30 A.M. - 11:45 A.M.<br />
+                      Afternoon: 1:00 P.M. - 5:00 P.M.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </section>
-        )}
 
-        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-8 text-center text-3xl font-bold text-[#800000]">
-            DepEd Vision, Mission, Core Values, and Mandates
+            {/* Visit Us Section */}
+            <div className="mt-8 rounded-lg bg-white/95 p-6 shadow-lg backdrop-blur-sm">
+              <h3 className="mb-4 text-center text-xl font-bold text-[#800000]">Visit Us</h3>
+              <div className="aspect-video w-full overflow-hidden rounded-lg">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.123456789!2d126.17890!3d8.57890!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOMKwMzQnNDQuMCJOIDEyNsKwMTAnNDQuMCJF!5e0!3m2!1sen!2sph!4v1234567890"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Barobo National High School Location"
+                />
+              </div>
+              <p className="mt-4 text-center text-sm text-gray-600">
+                G4HC+C74, Barobo, Surigao del Sur
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* DepEd Vision, Mission, and Core Values Section */}
+        <section className="mb-12 rounded-lg bg-gradient-to-br from-[#800000] to-[#600000] p-8 shadow-lg text-white">
+          <h2 className="mb-8 text-center text-3xl font-bold">
+            DepEd Vision, Mission, and Core Values
           </h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Eye className="h-8 w-8 text-blue-600" />
-                <h3 className="text-2xl font-bold text-[#800000]">DepEd Vision</h3>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* Vision */}
+            <div className="rounded-lg bg-white/10 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <Eye className="h-8 w-8 text-[#FFD700]" />
+                <h3 className="text-2xl font-bold">Vision</h3>
               </div>
-              <div className="text-justify text-gray-700">
-                {depedVision?.vision ? formatVisionText(depedVision.vision) : (
-                  <>
-                    We dream of Filipinos<br />
-                    who passionately love their country<br />
-                    and whose values and competencies<br />
-                    enable them to realize their full potential<br />
-                    and contribute meaningfully to building the nation.<br />
-                    <br />
-                    As a learner-centered public institution,<br />
-                    the Department of Education<br />
-                    continuously improves itself<br />
-                    to better serve its stakeholders.
-                  </>
-                )}
-              </div>
+              <p className="leading-relaxed text-white/90">
+                {depedVision ? formatVisionText(depedVision.vision) : 'Loading...'}
+              </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Target className="h-8 w-8 text-green-600" />
-                <h3 className="text-2xl font-bold text-[#800000]">DepEd Mission</h3>
+            {/* Mission */}
+            <div className="rounded-lg bg-white/10 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <Target className="h-8 w-8 text-[#FFD700]" />
+                <h3 className="text-2xl font-bold">Mission</h3>
               </div>
-              <div className="text-justify text-gray-700">
-                {depedMission?.mission ? formatMissionText(depedMission.mission) : (
-                  <>
-                    To protect and promote the right of every Filipino to quality, equitable, culture-based, and complete basic education where:<br />
-                    <br />
-                    – <strong>Students</strong> learn in a child-friendly, gender-sensitive, safe, and motivating environment.<br />
-                    <br />
-                    – <strong>Teachers</strong> facilitate learning and constantly nurture every learner.<br />
-                    <br />
-                    – <strong>Administrators and staff</strong>, as stewards of the institution, ensure an enabling and supportive environment for effective learning to happen.<br />
-                    <br />
-                    – <strong>Family, community, and other stakeholders</strong> are actively engaged and share responsibility for developing life-long learners.
-                  </>
-                )}
-              </div>
+              <p className="leading-relaxed text-white/90">
+                {depedMission ? formatMissionText(depedMission.mission) : 'Loading...'}
+              </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Star className="h-8 w-8 text-yellow-600" />
-                <h3 className="text-2xl font-bold text-[#800000]">DepEd Core Values</h3>
+            {/* Core Values */}
+            <div className="rounded-lg bg-white/10 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <Star className="h-8 w-8 text-[#FFD700]" />
+                <h3 className="text-2xl font-bold">Core Values</h3>
               </div>
-              <div className="text-justify text-gray-700">
-                <p className="mb-2">
-                  <strong>Maka-Diyos</strong> - Demonstrates adherence to ethical and spiritual principles
-                </p>
-                <p className="mb-2">
-                  <strong>Maka-tao</strong> - Sensitive to individual, social, and cultural differences
-                </p>
-                <p className="mb-2">
-                  <strong>Makakalikasan</strong> - Cares for the environment and utilizes resources wisely
-                </p>
-                <p>
-                  <strong>Makabansa</strong> - Demonstrates pride in being a Filipino; exercises rights and responsibilities
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <ScrollText className="h-8 w-8 text-purple-600" />
-                <h3 className="text-2xl font-bold text-[#800000]">DepEd Mandates</h3>
-              </div>
-              <div className="text-justify text-gray-700">
-                {depedVision?.mandates ? formatVisionText(depedVision.mandates) : (
-                  <>
-                    The Department of Education was established through the Education Decree of 1863 as the Superior Commission of Primary Instruction under a Chairman. The Education agency underwent many reorganization efforts in the 20th century in order to better define its purpose vis a vis the changing administrations and charters. The present day Department of Education was eventually mandated through Republic Act 9155, otherwise known as the Governance of Basic Education act of 2001 which establishes the mandate of this agency.<br />
-                    <br />
-                    The Department of Education (DepEd) formulates, implements, and coordinates policies, plans, programs and projects in the areas of formal and non-formal basic education. It supervises all elementary and secondary education institutions, including alternative learning systems, both public and private; and provides for the establishment and maintenance of a complete, adequate, and integrated system of basic education relevant to the goals of national development.
-                  </>
-                )}
-              </div>
+              <ul className="space-y-2 text-white/90">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#FFD700]">•</span>
+                  <span>Maka-Diyos (God-loving)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#FFD700]">•</span>
+                  <span>Maka-tao (People-oriented)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#FFD700]">•</span>
+                  <span>Makakalikasan (Environment-friendly)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#FFD700]">•</span>
+                  <span>Makabansa (Patriotic)</span>
+                </li>
+              </ul>
             </div>
           </div>
         </section>
 
         {/* BNHS Hymn Section */}
-        {hymnVideoUrl && (
-          <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-            <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">BNHS Hymn</h2>
-            {autoplayFailed && (
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
-                <Volume2 className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  Click the play button below to start the BNHS Hymn video with sound.
-                </AlertDescription>
-              </Alert>
-            )}
-            <div className="mx-auto max-w-4xl">
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
-                <video
-                  ref={videoRef}
-                  src={hymnVideoUrl}
-                  controls
-                  className="h-full w-full"
-                  playsInline
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">
-          {depedVision?.bnhsStatisticalBulletinTitle || 'Barobo National High School Statistical Bulletin'}
-        </h2>
-
-        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-2 text-center text-3xl font-bold text-[#800000]">
-            School at a Glance
-          </h2>
-          <p className="mb-6 text-center text-lg text-gray-600">
-            Key statistics and information about Barobo National High School
-          </p>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg">
-              <h3 className="mb-2 text-lg font-semibold">Total Students</h3>
-              <p className="text-4xl font-bold">2,450</p>
-              <p className="mt-2 text-sm opacity-90">Enrolled for SY 2024-2025</p>
-            </div>
-
-            <div className="rounded-lg bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
-              <h3 className="mb-2 text-lg font-semibold">Teaching Staff</h3>
-              <p className="text-4xl font-bold">98</p>
-              <p className="mt-2 text-sm opacity-90">Dedicated educators</p>
-            </div>
-
-            <div className="rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg">
-              <h3 className="mb-2 text-lg font-semibold">Classrooms</h3>
-              <p className="text-4xl font-bold">65</p>
-              <p className="mt-2 text-sm opacity-90">Modern learning spaces</p>
-            </div>
-
-            <div className="rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg">
-              <h3 className="mb-2 text-lg font-semibold">Programs Offered</h3>
-              <p className="text-4xl font-bold">8</p>
-              <p className="mt-2 text-sm opacity-90">Specialized tracks</p>
-            </div>
+        <section className="mb-12 rounded-lg bg-gradient-to-br from-[#800000] to-[#600000] p-8 shadow-lg">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <Volume2 className="h-8 w-8 text-[#FFD700]" />
+            <h2 className="text-center text-3xl font-bold text-white">
+              BNHS Hymn
+            </h2>
           </div>
+
+          {hymnLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-white" />
+            </div>
+          ) : hymnVideoUrl ? (
+            <div className="mx-auto max-w-4xl">
+              {autoplayFailed && !isYouTubeVideo && (
+                <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+                  <AlertDescription className="text-yellow-800">
+                    Click the play button to hear the BNHS Hymn. (Autoplay was blocked by your browser)
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {embedError && isYouTubeVideo && (
+                <Alert className="mb-4 bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-800">
+                    Unable to load the video. This may be due to privacy settings or embedding restrictions on the video.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black shadow-xl">
+                {isYouTubeVideo && youtubeEmbedUrl ? (
+                  <iframe
+                    ref={iframeRef}
+                    src={youtubeEmbedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="BNHS Hymn"
+                    onError={() => {
+                      console.error('YouTube embed failed to load');
+                      setEmbedError(true);
+                    }}
+                  />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    src={hymnVideoUrl}
+                    controls
+                    className="h-full w-full"
+                    playsInline
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+              <p className="mt-4 text-center text-sm text-white/80">
+                The BNHS Hymn will auto-play with sound after a 3-second delay
+              </p>
+            </div>
+          ) : (
+            <Alert className="mx-auto max-w-2xl bg-white/10 border-white/20">
+              <AlertDescription className="text-white">
+                No hymn video available. Please contact the administrator to upload the BNHS Hymn.
+              </AlertDescription>
+            </Alert>
+          )}
         </section>
 
+        {/* Quick Links Section */}
         <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">Quick Links</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">
+            Quick Links
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <a
               href="/about/history"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+              className="group flex flex-col items-center gap-3 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5 hover:shadow-lg"
             >
-              <BookOpen className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">School History</h3>
-                <p className="text-sm text-gray-600">Learn about our heritage</p>
-              </div>
+              <BookOpen className="h-12 w-12 text-[#800000] transition-transform group-hover:scale-110" />
+              <span className="text-center font-semibold text-gray-800">Our History</span>
             </a>
 
             <a
-              href="/about/organizational-structure"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+              href="/publications/the-inkspirer"
+              className="group flex flex-col items-center gap-3 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5 hover:shadow-lg"
             >
-              <Users className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">Organizational Structure</h3>
-                <p className="text-sm text-gray-600">Meet our leadership</p>
-              </div>
+              <FileText className="h-12 w-12 text-[#800000] transition-transform group-hover:scale-110" />
+              <span className="text-center font-semibold text-gray-800">The Inkspirer</span>
             </a>
 
             <a
-              href="/paps/learning-curriculum"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+              href="/about/learning-curriculum"
+              className="group flex flex-col items-center gap-3 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5 hover:shadow-lg"
             >
-              <GraduationCap className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">Learning Curriculum</h3>
-                <p className="text-sm text-gray-600">Explore our programs</p>
-              </div>
+              <GraduationCap className="h-12 w-12 text-[#800000] transition-transform group-hover:scale-110" />
+              <span className="text-center font-semibold text-gray-800">Curriculum</span>
             </a>
 
             <a
-              href="/about/citizen-charter"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
+              href="/about/downloadable-forms"
+              className="group flex flex-col items-center gap-3 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5 hover:shadow-lg"
             >
-              <FileText className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">Citizen's Charter</h3>
-                <p className="text-sm text-gray-600">Service information</p>
-              </div>
-            </a>
-
-            <a
-              href="/paps/downloadable-forms"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
-            >
-              <Download className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">Downloadable Forms</h3>
-                <p className="text-sm text-gray-600">Access school forms</p>
-              </div>
-            </a>
-
-            <a
-              href="/about/alumni"
-              className="group flex items-center gap-4 rounded-lg border-2 border-[#800000]/20 p-6 transition-all hover:border-[#800000] hover:bg-[#800000]/5"
-            >
-              <Users className="h-8 w-8 text-[#800000]" />
-              <div>
-                <h3 className="font-bold text-[#800000] group-hover:underline">Alumni</h3>
-                <p className="text-sm text-gray-600">Connect with graduates</p>
-              </div>
+              <Download className="h-12 w-12 text-[#800000] transition-transform group-hover:scale-110" />
+              <span className="text-center font-semibold text-gray-800">Forms</span>
             </a>
           </div>
         </section>
 
-        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-6 text-center text-3xl font-bold text-[#800000]">School Calendar</h2>
-          <div className="mx-auto max-w-4xl">
-            <div className="overflow-hidden rounded-lg border">
-              <img
-                src="/assets/generated/calendar-header.dim_800x200.jpg"
-                alt="School Calendar"
-                className="w-full"
-              />
+        {/* Statistical Bulletin Section */}
+        <section className="mb-12 rounded-lg bg-[#800000] p-8 shadow-lg">
+          <h2 className="mb-6 text-center text-3xl font-bold text-white">
+            {depedVision?.bnhsStatisticalBulletinTitle || 'Barobo National High School Statistical Bulletin'}
+          </h2>
+          <div
+            className="rounded-lg bg-cover bg-center p-8"
+            style={{
+              backgroundImage: 'url(/assets/generated/stats-background.dim_600x400.jpg)',
+            }}
+          >
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-white/90 p-6 text-center shadow-md backdrop-blur-sm">
+                <p className="text-4xl font-bold text-[#800000]">2,500+</p>
+                <p className="mt-2 text-gray-700">Students Enrolled</p>
+              </div>
+              <div className="rounded-lg bg-white/90 p-6 text-center shadow-md backdrop-blur-sm">
+                <p className="text-4xl font-bold text-[#800000]">120+</p>
+                <p className="mt-2 text-gray-700">Dedicated Teachers</p>
+              </div>
+              <div className="rounded-lg bg-white/90 p-6 text-center shadow-md backdrop-blur-sm">
+                <p className="text-4xl font-bold text-[#800000]">95%</p>
+                <p className="mt-2 text-gray-700">Graduation Rate</p>
+              </div>
+              <div className="rounded-lg bg-white/90 p-6 text-center shadow-md backdrop-blur-sm">
+                <p className="text-4xl font-bold text-[#800000]">50+</p>
+                <p className="mt-2 text-gray-700">Years of Excellence</p>
+              </div>
             </div>
-            <div className="mt-6 space-y-4">
-              <div className="flex items-start gap-4 rounded-lg border p-4">
-                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
-                  <div className="text-2xl font-bold">15</div>
-                  <div className="text-xs">JAN</div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#800000]">Enrollment Period Begins</h3>
-                  <p className="text-sm text-gray-600">Start of enrollment for incoming students</p>
-                </div>
-              </div>
+          </div>
+        </section>
 
-              <div className="flex items-start gap-4 rounded-lg border p-4">
-                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
-                  <div className="text-2xl font-bold">05</div>
-                  <div className="text-xs">FEB</div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#800000]">First Day of Classes</h3>
-                  <p className="text-sm text-gray-600">Opening of School Year 2024-2025</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 rounded-lg border p-4">
-                <div className="flex-shrink-0 rounded bg-[#800000] px-3 py-2 text-center text-white">
-                  <div className="text-2xl font-bold">20</div>
-                  <div className="text-xs">MAR</div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#800000]">Intramurals Week</h3>
-                  <p className="text-sm text-gray-600">Annual sports and cultural activities</p>
-                </div>
-              </div>
+        {/* School Calendar Section */}
+        <section className="mb-12 rounded-lg bg-white p-8 shadow-md">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <ScrollText className="h-8 w-8 text-[#800000]" />
+            <h2 className="text-center text-3xl font-bold text-[#800000]">
+              School Calendar
+            </h2>
+          </div>
+          <div className="overflow-hidden rounded-lg">
+            <img
+              src="/assets/generated/calendar-header.dim_800x200.jpg"
+              alt="School Calendar"
+              className="w-full"
+            />
+          </div>
+          <div className="mt-6 space-y-4">
+            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
+              <p className="font-semibold text-gray-800">Opening of Classes</p>
+              <p className="text-gray-600">August 29, 2024</p>
+            </div>
+            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
+              <p className="font-semibold text-gray-800">First Semester Ends</p>
+              <p className="text-gray-600">December 20, 2024</p>
+            </div>
+            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
+              <p className="font-semibold text-gray-800">Second Semester Begins</p>
+              <p className="text-gray-600">January 6, 2025</p>
+            </div>
+            <div className="rounded-lg border-l-4 border-[#800000] bg-gray-50 p-4">
+              <p className="font-semibold text-gray-800">End of School Year</p>
+              <p className="text-gray-600">May 30, 2025</p>
             </div>
           </div>
         </section>

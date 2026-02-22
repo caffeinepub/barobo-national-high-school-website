@@ -1,51 +1,58 @@
 {
   "kind": "build_request",
-  "title": "Add optional blinking animation for page title text",
-  "priority": "normal",
+  "title": "Fix YouTube video embedding in BNHS Hymn section",
+  "projectName": "Barobo National High School",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
+      "text": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-last"
         ],
         "quotes": [
-          "can I ask can be produced output that animate text like blinking the title text?"
+          "example the BNHS hymn I upload on the YouTube Channel there's the external link there I paste or place the link then it doesn't work",
+          "when I paste this link https://www.youtube.com/watch?v=3gPb2XoQ2ug doesn't work?",
+          "video doesn't display correctly or need any troubleshooting"
         ]
       },
       "acceptanceCriteria": [
-        "A new blink animation exists in the global styles (e.g., in frontend/src/index.css) as a class that can be applied to any element.",
-        "When the user has prefers-reduced-motion enabled, the blinking animation is disabled (no blinking occurs)."
+        "YouTube links in standard format (https://www.youtube.com/watch?v=VIDEO_ID) are properly converted to embeddable format",
+        "YouTube links in short format (https://youtu.be/VIDEO_ID) are properly converted to embeddable format",
+        "The video displays correctly on the public BNHS Hymn page after saving",
+        "The video auto-plays with sound after the configured 3-second delay",
+        "No changes are made to other existing functionality or pages"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
+      "text": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "can I ask can be produced output that animate text like blinking the title text?"
+          "msg-last"
         ]
       },
       "acceptanceCriteria": [
-        "PageHeader accepts a new optional prop (e.g., blinkTitle?: boolean) that defaults to false.",
-        "When blinkTitle is true, the <h1> title in PageHeader uses the blink animation class and visibly blinks.",
-        "When blinkTitle is false or omitted, the title renders exactly as it does currently (no animation)."
+        "YouTube embed uses parameters that enable autoplay with sound (autoplay=1&mute=0)",
+        "Clear error message is displayed if a video cannot be embedded (privacy restrictions, embedding disabled)",
+        "The system gracefully handles edge cases like invalid YouTube URLs"
       ]
     }
   ],
   "constraints": [
-    "Do not modify files listed as immutable in SYSTEM_CONTEXT (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui).",
-    "Use English for any user-facing text."
+    "Do not modify any other pages, components, or functionality beyond the BNHS Hymn video embedding",
+    "Do not change the backend implementation",
+    "Preserve the existing 3-second auto-play delay behavior",
+    "Maintain the existing admin interface for BNHS Hymn Management"
   ],
   "nonGoals": [
-    "Do not add new admin panels or backend settings for controlling the animation.",
-    "Do not apply blinking to every page title automatically; it must be opt-in per usage."
+    "Changing the upload video from device functionality",
+    "Modifying the overall layout or design of the BNHS Hymn page",
+    "Adding support for other video platforms beyond YouTube",
+    "Changing any other video-related features on the site"
   ],
   "imageRequirements": {
     "required": [],

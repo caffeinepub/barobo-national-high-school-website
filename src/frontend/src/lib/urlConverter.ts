@@ -1,11 +1,78 @@
 /**
- * Enhanced URL converter for cloud storage sharing URLs
- * Automatically detects and converts Google Drive, OneDrive, Dropbox, and Google Photos links
+ * Enhanced URL converter for cloud storage sharing URLs and YouTube embeds
+ * Automatically detects and converts Google Drive, OneDrive, Dropbox, Google Photos, and YouTube links
  * to direct media access URLs - all processing happens client-side with improved fallback handling
  */
 
+/**
+ * Converts YouTube URLs to embeddable format
+ * Supports both standard (youtube.com/watch?v=) and short (youtu.be/) formats
+ * Returns null if the URL is not a valid YouTube URL
+ */
+export function convertYouTubeToEmbed(url: string): string | null {
+  const trimmedUrl = url.trim();
+  
+  // Check if it's a YouTube URL
+  if (!trimmedUrl.includes('youtube.com') && !trimmedUrl.includes('youtu.be')) {
+    return null;
+  }
+
+  try {
+    // Pattern 1: Standard YouTube URL (https://www.youtube.com/watch?v=VIDEO_ID)
+    const standardMatch = trimmedUrl.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/);
+    if (standardMatch && standardMatch[1]) {
+      return `https://www.youtube.com/embed/${standardMatch[1]}`;
+    }
+
+    // Pattern 2: Short YouTube URL (https://youtu.be/VIDEO_ID)
+    const shortMatch = trimmedUrl.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (shortMatch && shortMatch[1]) {
+      return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    }
+
+    // Pattern 3: Already in embed format
+    if (trimmedUrl.includes('/embed/')) {
+      const embedMatch = trimmedUrl.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+      if (embedMatch && embedMatch[1]) {
+        return `https://www.youtube.com/embed/${embedMatch[1]}`;
+      }
+    }
+
+    // Pattern 4: YouTube URL with additional parameters
+    const urlObj = new URL(trimmedUrl);
+    const videoId = urlObj.searchParams.get('v');
+    if (videoId && videoId.length === 11) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    console.warn('Could not extract YouTube video ID from URL:', trimmedUrl);
+    return null;
+  } catch (error) {
+    console.error('Error parsing YouTube URL:', error);
+    return null;
+  }
+}
+
+/**
+ * Validates if a URL is a YouTube URL
+ */
+export function isYouTubeUrl(url: string): boolean {
+  const trimmedUrl = url.trim().toLowerCase();
+  return trimmedUrl.includes('youtube.com') || trimmedUrl.includes('youtu.be');
+}
+
 export function convertToDirectImageUrl(url: string): string {
   const trimmedUrl = url.trim();
+
+  // Check if it's a YouTube URL first
+  if (isYouTubeUrl(trimmedUrl)) {
+    const embedUrl = convertYouTubeToEmbed(trimmedUrl);
+    if (embedUrl) {
+      return embedUrl;
+    }
+    // If conversion failed, return original URL
+    return trimmedUrl;
+  }
 
   // Google Photos conversion with enhanced handling
   if (trimmedUrl.includes('photos.google.com') || trimmedUrl.includes('photos.app.goo.gl')) {
@@ -190,9 +257,12 @@ export function convertToDirectImageUrl(url: string): string {
  * Detects the cloud storage provider from a URL
  * Returns the provider type for specialized handling
  */
-export function detectCloudProvider(url: string): 'google-drive' | 'onedrive' | 'dropbox' | 'google-photos' | 'other' {
+export function detectCloudProvider(url: string): 'google-drive' | 'onedrive' | 'dropbox' | 'google-photos' | 'youtube' | 'other' {
   const trimmedUrl = url.trim().toLowerCase();
 
+  if (trimmedUrl.includes('youtube.com') || trimmedUrl.includes('youtu.be')) {
+    return 'youtube';
+  }
   if (trimmedUrl.includes('photos.google.com') || trimmedUrl.includes('photos.app.goo.gl') || 
       (trimmedUrl.includes('googleusercontent.com') && trimmedUrl.includes('lh3'))) {
     return 'google-photos';
@@ -279,6 +349,8 @@ export function isLikelyImageUrl(url: string): boolean {
  */
 export function getProviderName(provider: ReturnType<typeof detectCloudProvider>): string {
   switch (provider) {
+    case 'youtube':
+      return 'YouTube';
     case 'google-photos':
       return 'Google Photos';
     case 'google-drive':
@@ -291,4 +363,3 @@ export function getProviderName(provider: ReturnType<typeof detectCloudProvider>
       return 'external link';
   }
 }
-

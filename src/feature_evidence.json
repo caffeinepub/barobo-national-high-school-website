@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-reusable-css-animation-for-blinking-text-including-a-reduced-motion-safe-behavior-and-expose-it-as-a-simple-class-name-that-can-be-applied-to-headings",
-      "featureTitle": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
+      "featureId": "feature-fix-the-youtube-video-embedding-functionality-in-the-bnhs-hymn-section-so-that-when-a-youtube-link-e-g-https-www-youtube-com-watch-v-3gpb2xoq2ug-is-pasted-into-the-external-link-field-in-bnhs-hymn-management-the-video-displays-and-plays-correctly-on-the-public-bnhs-hymn-page",
+      "featureTitle": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
       "files": [
-        "frontend/src/index.css"
+        "frontend/src/lib/urlConverter.ts",
+        "frontend/src/pages/BNHSHymnManagementPage.tsx",
+        "frontend/src/pages/HomePage.tsx"
       ],
       "components": [
         "blob-storage@4.0.0",
@@ -23,10 +25,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-pageheader-component-to-support-an-optional-blinking-title-mode-without-changing-existing-pages-by-default",
-      "featureTitle": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
+      "featureId": "feature-ensure-the-youtube-embed-player-is-configured-to-allow-autoplay-with-sound-and-includes-proper-error-handling-for-videos-that-cannot-be-embedded-due-to-privacy-settings-or-embed-restrictions",
+      "featureTitle": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
       "files": [
-        "frontend/src/components/PageHeader.tsx"
+        "frontend/src/lib/urlConverter.ts",
+        "frontend/src/pages/BNHSHymnManagementPage.tsx",
+        "frontend/src/pages/HomePage.tsx"
       ],
       "components": [
         "blob-storage@4.0.0",

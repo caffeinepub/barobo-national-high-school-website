@@ -1,24 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to add admin-editable content controls for specific website sections and optional UI text animation.",
-  "architectural_notes": [
-    "Requested changes should not affect other parts of the system (scope limited to specified sections)."
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "YouTube video links pasted in BNHS Hymn Management external link field are not displaying/embedding correctly on the site"
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-a-reusable-css-animation-for-blinking-text-including-a-reduced-motion-safe-behavior-and-expose-it-as-a-simple-class-name-that-can-be-applied-to-headings",
-      "title": "Add a reusable CSS animation for blinking text (including a reduced-motion safe behavior) and expose it as a simple class name that can be applied to headings.",
+      "id": "feature-fix-the-youtube-video-embedding-functionality-in-the-bnhs-hymn-section-so-that-when-a-youtube-link-e-g-https-www-youtube-com-watch-v-3gpb2xoq2ug-is-pasted-into-the-external-link-field-in-bnhs-hymn-management-the-video-displays-and-plays-correctly-on-the-public-bnhs-hymn-page",
+      "title": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-pageheader-component-to-support-an-optional-blinking-title-mode-without-changing-existing-pages-by-default",
-      "title": "Update the PageHeader component to support an optional blinking title mode, without changing existing pages by default.",
+      "id": "feature-ensure-the-youtube-embed-player-is-configured-to-allow-autoplay-with-sound-and-includes-proper-error-handling-for-videos-that-cannot-be-embedded-due-to-privacy-settings-or-embed-restrictions",
+      "title": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
       "reqIds": [
         "REQ-2"
       ],
@@ -28,24 +28,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add admin controls for Principal Section (upload photo; edit name, position, message; CRUD principal content)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add admin controls for Faculty & Staff Section (upload/replace group photos for JHS, SHS, Staff only; keep text fixed)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Support animated/blinking title text output (UI text animation option)",
+      "summary": "Fix YouTube video embedding for BNHS Hymn section - external link not displaying video",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add optional blinking animation for page title text",
+  "projectName": "Barobo National High School",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
