@@ -1,39 +1,42 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "Barobo National High School (BNHS) website project experiencing critical deployment issues after Version 200 broke multiple features. User lost Super Admin access and is attempting to revert to Version 193. Current focus is recovering Super Admin principal ID and reverting to last stable version.",
+  "architectural_notes": [
+    "Super Admin Principal ID: fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe (must be locked in backend for role-based access)",
+    "Version 193 is last known stable version before breaking changes",
+    "Platform has fundamental limitation: cannot make surgical code edits to complex applications - rebuilds affect unrelated sections",
+    "Complex application with interdependencies: maroon-gold theme, admin uploads, auto-save, visitor analytics, role-based access",
+    "YouTube embed issue in BNHS Hymn section triggered cascading failures across home page, DepEd Vision/Mission, principal info, Statistical Bulletin"
+  ],
   "known_issues": [
-    "YouTube video links pasted in BNHS Hymn Management external link field are not displaying/embedding correctly on the site"
+    "Version 200 deployment broke: home page, DepEd Vision/Mission background, Mission/Vision loading, principal name/message, Statistical Bulletin background",
+    "Super Admin access lost after Version 200 deployment - principal ID not being recognized",
+    "YouTube external link not working in BNHS Hymn section (original issue that triggered Version 200)",
+    "Token budget limitations preventing revert operations in long conversation threads",
+    "Platform cannot reliably make isolated changes to complex customized applications without side effects"
   ],
   "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-fix-the-youtube-video-embedding-functionality-in-the-bnhs-hymn-section-so-that-when-a-youtube-link-e-g-https-www-youtube-com-watch-v-3gpb2xoq2ug-is-pasted-into-the-external-link-field-in-bnhs-hymn-management-the-video-displays-and-plays-correctly-on-the-public-bnhs-hymn-page",
-      "title": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-youtube-embed-player-is-configured-to-allow-autoplay-with-sound-and-includes-proper-error-handling-for-videos-that-cannot-be-embedded-due-to-privacy-settings-or-embed-restrictions",
-      "title": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix YouTube video embedding for BNHS Hymn section - external link not displaying video",
-      "reqIds": [],
+      "summary": "Initialize the Super Admin role in the backend by setting the principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' as the Super Admin principal in the main actor's initialization logic",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add a Super Admin recovery mechanism in the AdminDashboardPage that allows the principal 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' to reinitialize Super Admin access if it was lost",
+      "reqIds": [
+        "REQ-2"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Barobo National High School",
+  "projectName": "Barobo National High School Website",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

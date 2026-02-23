@@ -1,57 +1,39 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-22T00:31:22.415Z",
+  "generatedAt": "2026-02-23T08:38:56.098Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 2,
-    "implemented": 2,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/urlConverter.ts",
-          "frontend/src/pages/BNHSHymnManagementPage.tsx",
-          "frontend/src/pages/HomePage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/urlConverter.ts",
-          "frontend/src/pages/BNHSHymnManagementPage.tsx",
-          "frontend/src/pages/HomePage.tsx"
-        ]
+        "summary": "Initialize the Super Admin role in the backend by setting the principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' as the Super Admin principal in the main actor's initialization logic",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
-        "status": "implemented",
+        "summary": "Add a Super Admin recovery mechanism in the AdminDashboardPage that allows the principal 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' to reinitialize Super Admin access if it was lost",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/lib/urlConverter.ts",
-          "frontend/src/pages/BNHSHymnManagementPage.tsx"
+          "frontend/src/pages/AdminDashboardPage.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
-        "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/lib/urlConverter.ts",
-          "frontend/src/pages/BNHSHymnManagementPage.tsx"
-        ]
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/config.ts",
-    "frontend/src/lib/urlConverter.ts",
-    "frontend/src/pages/BNHSHymnManagementPage.tsx",
-    "frontend/src/pages/HomePage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

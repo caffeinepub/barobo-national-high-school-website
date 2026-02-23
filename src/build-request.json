@@ -1,58 +1,59 @@
 {
   "kind": "build_request",
-  "title": "Fix YouTube video embedding in BNHS Hymn section",
-  "projectName": "Barobo National High School",
+  "title": "Recover Super Admin Principal ID Access",
+  "projectName": "BNHS Website",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the YouTube video embedding functionality in the BNHS Hymn section so that when a YouTube link (e.g., https://www.youtube.com/watch?v=3gPb2XoQ2ug) is pasted into the external link field in BNHS Hymn Management, the video displays and plays correctly on the public BNHS Hymn page",
+      "text": "Initialize the Super Admin role in the backend by setting the principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' as the Super Admin principal in the main actor's initialization logic",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "recover my super admin principal ID my super admin ID is fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' is hardcoded as the Super Admin principal in backend/main.mo",
+        "When the user authenticates with Internet Identity using this principal, their role is recognized as Super Admin",
+        "The Super Admin has full access to all admin features including User Management, Analytics Dashboard, and Storage Monitor",
+        "The Super Admin principal assignment persists across canister upgrades"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a Super Admin recovery mechanism in the AdminDashboardPage that allows the principal 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' to reinitialize Super Admin access if it was lost",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "example the BNHS hymn I upload on the YouTube Channel there's the external link there I paste or place the link then it doesn't work",
-          "when I paste this link https://www.youtube.com/watch?v=3gPb2XoQ2ug doesn't work?",
-          "video doesn't display correctly or need any troubleshooting"
+          "recover my super admin principal ID"
         ]
       },
       "acceptanceCriteria": [
-        "YouTube links in standard format (https://www.youtube.com/watch?v=VIDEO_ID) are properly converted to embeddable format",
-        "YouTube links in short format (https://youtu.be/VIDEO_ID) are properly converted to embeddable format",
-        "The video displays correctly on the public BNHS Hymn page after saving",
-        "The video auto-plays with sound after the configured 3-second delay",
-        "No changes are made to other existing functionality or pages"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Ensure the YouTube embed player is configured to allow autoplay with sound and includes proper error handling for videos that cannot be embedded due to privacy settings or embed restrictions",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ]
-      },
-      "acceptanceCriteria": [
-        "YouTube embed uses parameters that enable autoplay with sound (autoplay=1&mute=0)",
-        "Clear error message is displayed if a video cannot be embedded (privacy restrictions, embedding disabled)",
-        "The system gracefully handles edge cases like invalid YouTube URLs"
+        "The AdminDashboardPage displays a recovery button or automatic recovery flow when the authenticated principal matches the hardcoded Super Admin ID but lacks Super Admin permissions",
+        "Clicking the recovery mechanism calls a backend method to restore Super Admin role",
+        "After successful recovery, the user's role updates to Super Admin without requiring re-authentication",
+        "The recovery UI provides clear feedback on success or failure"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any other pages, components, or functionality beyond the BNHS Hymn video embedding",
-    "Do not change the backend implementation",
-    "Preserve the existing 3-second auto-play delay behavior",
-    "Maintain the existing admin interface for BNHS Hymn Management"
+    "Preserve all existing backend state variables and data structures",
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts",
+    "Do not change the authentication flow or Internet Identity integration",
+    "Maintain compatibility with existing role-based access control system"
   ],
   "nonGoals": [
-    "Changing the upload video from device functionality",
-    "Modifying the overall layout or design of the BNHS Hymn page",
-    "Adding support for other video platforms beyond YouTube",
-    "Changing any other video-related features on the site"
+    "Reverting to Version 193 (user should start new conversation for revert operation)",
+    "Fixing YouTube embed issues in BNHS Hymn section",
+    "Addressing other broken features from Version 200",
+    "Implementing multi-user Super Admin assignment"
   ],
   "imageRequirements": {
     "required": [],

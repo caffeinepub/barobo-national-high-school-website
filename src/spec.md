@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix YouTube video embedding in the BNHS Hymn section so that pasted YouTube links display and play correctly.
+**Goal:** Restore Super Admin access for the principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe'.
 
 **Planned changes:**
-- Fix YouTube URL conversion to properly handle standard (youtube.com/watch?v=) and short (youtu.be/) link formats for embedding
-- Configure YouTube embed player to enable autoplay with sound after the existing 3-second delay
-- Add error handling to display clear messages when videos cannot be embedded due to privacy or embed restrictions
+- Hardcode the principal ID 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' as the Super Admin in the backend initialization logic
+- Add a recovery mechanism in the AdminDashboardPage to restore Super Admin role if lost
+- Ensure Super Admin access persists across canister upgrades
 
-**User-visible outcome:** Administrators can paste YouTube links into the BNHS Hymn external link field, and the videos will display and auto-play correctly on the public BNHS Hymn page.
+**User-visible outcome:** The user can authenticate with their principal ID and automatically regain full Super Admin access to all admin features including User Management, Analytics Dashboard, and Storage Monitor.

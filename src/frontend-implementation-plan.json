@@ -1,59 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix YouTube video embedding in BNHS Hymn section",
+  "title": "Recover Super Admin Principal ID Access - Frontend",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Fix YouTube video embedding functionality to convert standard and short YouTube URLs to embeddable format and ensure proper display on the public BNHS Hymn page",
-      "acceptanceCriteria": [
-        "YouTube links in standard format (https://www.youtube.com/watch?v=VIDEO_ID) are properly converted to embeddable format",
-        "YouTube links in short format (https://youtu.be/VIDEO_ID) are properly converted to embeddable format",
-        "The video displays correctly on the public BNHS Hymn page after saving",
-        "The video auto-plays with sound after the configured 3-second delay",
-        "No changes are made to other existing functionality or pages"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/urlConverter.ts",
-          "operation": "modify",
-          "description": "Add YouTube URL conversion utility function that extracts video IDs from both standard (https://www.youtube.com/watch?v=VIDEO_ID) and short (https://youtu.be/VIDEO_ID) formats and converts them to embeddable format (https://www.youtube.com/embed/VIDEO_ID). Include URL validation to ensure proper YouTube domain matching."
-        },
-        {
-          "path": "frontend/src/pages/BNHSHymnManagementPage.tsx",
-          "operation": "modify",
-          "description": "Update the external link handling logic to use the YouTube URL converter utility when a YouTube URL is detected in the external link field. Apply the conversion before saving or previewing the video URL. Ensure the converted embeddable URL is stored and displayed in the preview correctly."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Update the BNHS Hymn video display section to properly render YouTube embeds using iframe with the embeddable URL format. Ensure the iframe includes autoplay and unmute parameters (autoplay=1&mute=0) and maintains the existing 3-second delay before auto-playing. Verify that the video URL is in embeddable format before rendering."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Configure YouTube embed player with autoplay and sound enabled, and implement error handling for videos with privacy or embed restrictions",
+      "summary": "Add Super Admin recovery mechanism in AdminDashboardPage for principal 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' to reinitialize access",
       "acceptanceCriteria": [
-        "YouTube embed uses parameters that enable autoplay with sound (autoplay=1&mute=0)",
-        "Clear error message is displayed if a video cannot be embedded (privacy restrictions, embedding disabled)",
-        "The system gracefully handles edge cases like invalid YouTube URLs"
+        "The AdminDashboardPage displays a recovery button or automatic recovery flow when the authenticated principal matches the hardcoded Super Admin ID but lacks Super Admin permissions",
+        "Clicking the recovery mechanism calls a backend method to restore Super Admin role",
+        "After successful recovery, the user's role updates to Super Admin without requiring re-authentication",
+        "The recovery UI provides clear feedback on success or failure"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
           "operation": "modify",
-          "description": "Add error handling for YouTube embed iframe failures. Implement onError event handler to detect when a video cannot be embedded due to privacy settings or embed restrictions. Display a user-friendly error message when embedding fails. Include validation for malformed or invalid YouTube URLs before attempting to render the iframe."
+          "description": "Add Super Admin recovery detection and UI flow. When the authenticated principal matches 'fiawz-svdcq-fsplo-srina-bia3r-kdxu5-c4tcj-e7bkm-w3gex-cvpvm-2qe' but getSuperAdminStatus indicates the Super Admin is not properly initialized or the current role is not Super Admin, display a recovery button. Wire the button to call the recoverSuperAdmin backend capability. Show loading state during recovery and success/error feedback messages. After successful recovery, invalidate the user role and permissions queries to refresh the dashboard state without requiring re-authentication."
         },
         {
-          "path": "frontend/src/lib/urlConverter.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add validation helper function that verifies YouTube URL format and returns null for invalid URLs. Include pattern matching for both standard and short YouTube URL formats with proper domain and path validation. This prevents attempting to embed non-YouTube or malformed URLs."
-        },
-        {
-          "path": "frontend/src/pages/BNHSHymnManagementPage.tsx",
-          "operation": "modify",
-          "description": "Add frontend validation for YouTube URLs before allowing save. Display validation error messages for invalid YouTube URL formats. Show a warning message if the URL might have embedding restrictions (though this cannot be fully validated client-side). Include helpful hints about YouTube URL formats in the UI."
+          "description": "Add React Query hooks for Super Admin recovery operations. Create useGetSuperAdminStatus hook to fetch SuperAdminStatus from the backend. Create useRecoverSuperAdmin mutation hook that calls the recoverSuperAdmin backend capability and invalidates relevant queries (user role, permissions, super admin status) on success. Ensure proper error handling and loading states for both hooks."
         }
       ]
     }

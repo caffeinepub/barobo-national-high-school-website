@@ -1,6 +1,5 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Time "mo:core/Time";
@@ -12,8 +11,6 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import OutCall "http-outcalls/outcall";
 
-// Do not modify or delete any empty actors. These ensure that a functional canister is deployed and available for HTTP requests.
-// Do not remove the blob-storage functional import or the initializeStorage function.
 actor {
   include MixinStorage();
 
@@ -2038,4 +2035,3 @@ actor {
     };
   };
 };
-
